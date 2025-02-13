@@ -104,9 +104,10 @@ The system functions as a monitoring tool that integrates with cloud platforms, 
 ### Feature/Package A: Monitoring System
 **UML Use Case Diagram: Cloud ADR Monitoring**  
 ![UML Use Case Diagram](https://github.com/ekorsak-deutsch/CIDM6330/blob/cfced03da1ad043c094dbbd6e73f2bb348945c11/Assignment%201/UseCaseDiagram.png)
+
 ---
 
-### Feature/Package N: Alert System
+### Feature/Package B: Alert System
 **UML Sequence Diagram: Alert Generation for Email Rule Change**  
 ![UML Sequence Diagram](https://github.com/ekorsak-deutsch/CIDM6330/blob/cfced03da1ad043c094dbbd6e73f2bb348945c11/Assignment%201/SampleSequenceDiagramForwardingRuleChange.png)
 
