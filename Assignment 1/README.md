@@ -14,7 +14,7 @@
 ## Introduction
 
 ### Scope and Constraints
-The Cloud-Based ADR Solution is designed to provide cybersecurity monitoring capabilities for cloud-centric educational environments. Due to scope constraints, only the **Monitoring feature** will be implemented in this phase. This includes real-time tracking of logins, MFA modifications, and email rule changes via platform APIs. Advanced threat detection, file monitoring, response actions are **out of scope** for the current implementation.
+The Cloud-Based ADR Solution is designed to provide cybersecurity monitoring capabilities for cloud-centric educational environments. Due to scope constraints, only the **Monitoring feature** will be implemented in this phase. This includes real-time tracking of logins, MFA modifications, and email rule changes via platform APIs. Advanced threat detection, file monitoring, response actions are **out of scope** for the current implementation. Only Google Workspace API is considered, with Microsoft 365 as a possibility.
 
 ### Table of Contents
 1. [Requirements Statements](#requirements-statements)
@@ -35,13 +35,13 @@ The Cloud-Based ADR Solution is designed to provide cybersecurity monitoring cap
 - The system must track user logins.  
 - The system must monitor MFA setting changes.  
 - The system must detect email rule modifications.  
-- The system must integrate with Google WorkspaceAPIs.  
+- The system must integrate with Google Workspace APIs.  
 - The system must generate alerts for any anomalous activities detected.  
 
 ### Non-Functional Requirements
 - The system must provide data processing capabilities.  
 - The system must offer an intuitive web-based interface.  
-- The system must be capable of sending email alerts
+- The system must be capable of sending email alerts.
 - The system must encrypt stored and transmitted data.  
 
 ---
@@ -51,7 +51,7 @@ The Cloud-Based ADR Solution is designed to provide cybersecurity monitoring cap
 ### User Stories
 - **As a school IT administrator**, I want to monitor user logins so that I can detect unauthorized access.  
 - **As a security analyst**, I want to track MFA setting changes to prevent account takeovers.  
-- **As an auditor**, I want to review email rule modifications to identify potential security breaches.  
+- **As an auditor**, I want to review email rule modifications to identify potential data privacy breaches.  
 
 ### Use Cases
 - **UC01:** Monitoring Google Workspace logins.  
@@ -91,8 +91,8 @@ The system functions as a monitoring tool that integrates with cloud platforms, 
 - Administrators should be able to filter events based on time and severity.
 
 ### Interfaces (Controls)
-- **Dashboard:** Displays real-time monitoring data.
-- **Alert System:** Notifies administrators of detected anomalies.
+- **Dashboard:** Displays stored alerts.
+- **Alert System:** Notifies administrators of detected anomalies via email.
 
 ### Behaviors
 - **Login Monitoring:** Track user authentication events.
