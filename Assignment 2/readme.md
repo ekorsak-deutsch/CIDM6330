@@ -40,6 +40,8 @@ This application provides a REST API for auditing email forwarding rules.
    ```
 
 ## Entity Relationship Diagram (ERD)
+**Entity Relationship Diagram**
+![ERD](https://github.com/ekorsak-deutsch/CIDM6330/blob/f91eb8b4f61a908084c714aa763b0c03a464bfdb/Assignment%202/EmailForwardingRuleReviewERD.png)
 
 
 
