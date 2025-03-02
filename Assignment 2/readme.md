@@ -12,7 +12,7 @@ This API uses sample data about email forwarding rules, imported into a SQLite d
 The main focus of this assignment is developing an API that allows administrators to:
 
 1. Access forwarding rule data from the database
-2. Review forwarding rules and mark them as:
+2. Review forwarding rules and add investigation notes, for example:
    - **Not malicious** - When forwarding serves a necessary business purpose
    - **Under investigation** - During the period when administrators are investigating the rule
    - **Delete entries** - When a user has confirmed the forwarding rule has been removed
@@ -122,10 +122,59 @@ Once the application is running, you can access:
 ## Available Endpoints
 - GET /rules/ - Get all forwarding rules
 - GET /rules/{rule_id} - Get a specific rule
-- PUT /rules/{rule_id}/review - Update review/investigation notes
+- PUT /rules/{rule_id}/investigation - Update investigation notes
 - DELETE /rules/{rule_id} - Delete a rule
 - GET /rules/search/ - Search rules with filters
 - GET /stats/ - Get statistics about forwarding rules
+- GET /rules/{rule_id}/filters - Get filters for a specific rule
+
+## Sample PowerShell Commands for CRUD API Operations
+
+Below are PowerShell commands to interact with each endpoint in the Email Forwarding Rules Audit API.
+
+### Get All Forwarding Rules
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/rules/" -Method Get
+```
+
+### Get a Specific Rule by ID
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/rules/1" -Method Get
+```
+
+### Update Investigation Note for a Rule
+```powershell
+$updateData = @{
+    investigation_note = "Suspicious forwarding to external domain - needs further review"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8000/rules/1/investigation" -Method Put -Body $updateData -ContentType "application/json"
+```
+
+### Delete a Rule
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/rules/4" -Method Delete
+```
+
+### Search for Rules by Email
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/rules/search/?email=example.com" -Method Get
+```
+
+### Search for Rules with Filters
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/rules/search/?has_filters=true" -Method Get
+```
+
+### Get Statistics About Forwarding Rules
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/stats/" -Method Get
+```
+
+### Get Filters for a Specific Rule
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/rules/1/filters" -Method Get
+```
 
 ## Project Structure
 - main.py: FastAPI application and endpoints
