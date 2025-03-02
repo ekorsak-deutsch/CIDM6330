@@ -10,7 +10,6 @@ class ForwardingRuleBase(BaseModel):
     disposition: Optional[str] = None
     has_forwarding_filters: bool
     error: Optional[str] = None
-    review_note: Optional[str] = None
     investigation_note: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -22,7 +21,6 @@ class ForwardingRule(ForwardingRuleBase):
     id: int
 
 class ForwardingRuleUpdate(BaseModel):
-    review_note: Optional[str] = None
     investigation_note: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -41,7 +39,6 @@ def init_db():
         disposition TEXT,
         has_forwarding_filters BOOLEAN,
         error TEXT,
-        review_note TEXT,
         investigation_note TEXT
     )
     ''')
@@ -51,9 +48,14 @@ def init_db():
 # Database connection function
 def get_db():
     """Get a database connection with row factory set to return dictionaries"""
-    conn = sqlite3.connect("email_forwarding.db")
-    conn.row_factory = sqlite3.Row
-    return conn
+    conn = None
+    try:
+        conn = sqlite3.connect("email_forwarding.db")
+        conn.row_factory = sqlite3.Row
+        yield conn
+    finally:
+        if conn is not None:
+            conn.close()
 
 # Initialize the database when this module is imported
 init_db() 

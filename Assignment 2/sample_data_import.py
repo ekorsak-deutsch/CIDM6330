@@ -1,4 +1,3 @@
-
 import sqlite3
 
 # Database Connection
@@ -14,7 +13,8 @@ CREATE TABLE IF NOT EXISTS AutoForwarding (
     forwarding_email TEXT,
     disposition TEXT,
     has_forwarding_filters BOOLEAN,
-    error TEXT
+    error TEXT,
+    investigation_note TEXT
 )
 ''')
 conn.commit()
@@ -28,17 +28,19 @@ def store_autoforwarding_data(userForwardingData):
         disposition = user["autoForwarding"].get("disposition", None)
         has_filters = bool(user["forwardingFilters"])  # True if filters exist
         error = user.get("error", None)
+        investigation_note = user.get("investigation_note", None)
 
         cursor.execute('''
-            INSERT INTO AutoForwarding (email, name, forwarding_email, disposition, has_forwarding_filters, error)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO AutoForwarding (email, name, forwarding_email, disposition, has_forwarding_filters, error, investigation_note)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(email) DO UPDATE SET
                 name=excluded.name,
                 forwarding_email=excluded.forwarding_email,
                 disposition=excluded.disposition,
                 has_forwarding_filters=excluded.has_forwarding_filters,
-                error=excluded.error
-        ''', (email, name, forwarding_email, disposition, has_filters, error))
+                error=excluded.error,
+                investigation_note=excluded.investigation_note
+        ''', (email, name, forwarding_email, disposition, has_filters, error, investigation_note))
 
     conn.commit()
 
@@ -49,28 +51,32 @@ userForwardingData = [
         "name": "John Doe",
         "autoForwarding": {"enabled": True, "emailAddress": "forwarding@example.com", "disposition": "keep"},
         "forwardingFilters": [{"emailAddress": "specific@example.com", "createdAt": "2024-02-28"}],
-        "error": None
+        "error": None,
+        "investigation_note": "Legitimate forwarding to personal account"
     },
     {
         "email": "user3@example.com", 
         "name": "Mary Johnson",
         "autoForwarding": {"enabled": True, "emailAddress": "mary.personal@example.com", "disposition": "archive"},
         "forwardingFilters": [{"emailAddress": "work@example.com", "createdAt": "2024-03-01"}],
-        "error": None
+        "error": None,
+        "investigation_note": "Approved by manager on 2024-03-05"
     },
     {
         "email": "user4@example.com",
         "name": "Bob Wilson",
         "autoForwarding": {"enabled": True, "emailAddress": "bob.backup@example.com", "disposition": "trash"},
         "forwardingFilters": [],
-        "error": None
+        "error": None,
+        "investigation_note": "Needs further investigation - external domain"
     },
     {
         "email": "user2@example.com",
         "name": "Jane Smith",
         "autoForwarding": {"enabled": False},
         "forwardingFilters": [],
-        "error": "Permission denied"
+        "error": "Permission denied",
+        "investigation_note": "Error occurred during audit"
     }
 ]
 

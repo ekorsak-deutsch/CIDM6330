@@ -27,33 +27,50 @@ def get_rule(rule_id: int, db: sqlite3.Connection = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Rule not found")
     return dict(rule)
 
-@app.put("/rules/{rule_id}/review", response_model=ForwardingRule)
-def update_review_note(rule_id: int, update: ForwardingRuleUpdate, db: sqlite3.Connection = Depends(get_db)):
-    """Update the review note for a forwarding rule"""
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM AutoForwarding WHERE id = ?", (rule_id,))
-    rule = cursor.fetchone()
-    if rule is None:
-        raise HTTPException(status_code=404, detail="Rule not found")
+@app.put("/rules/{rule_id}/investigation", response_model=ForwardingRule)
+def update_investigation_note(rule_id: int, update: ForwardingRuleUpdate, db: sqlite3.Connection = Depends(get_db)):
+    """Update the investigation note for a forwarding rule"""
+    try:
+        cursor = db.cursor()
+        
+        # First check if the rule exists
+        cursor.execute("SELECT * FROM AutoForwarding WHERE id = ?", (rule_id,))
+        rule = cursor.fetchone()
+        if rule is None:
+            raise HTTPException(status_code=404, detail="Rule not found")
+        
+        # Prepare update data
+        updates = {}
+        if update.investigation_note is not None:
+            updates["investigation_note"] = update.investigation_note
+        
+        # Only perform update if there are fields to update
+        if updates:
+            set_clause = ", ".join([f"{key} = ?" for key in updates.keys()])
+            values = list(updates.values())
+            values.append(rule_id)
+            
+            # Execute update
+            cursor.execute(f"UPDATE AutoForwarding SET {set_clause} WHERE id = ?", values)
+            db.commit()
+        
+        # Get the updated rule
+        cursor.execute("SELECT * FROM AutoForwarding WHERE id = ?", (rule_id,))
+        updated_rule = cursor.fetchone()
+        if updated_rule is None:
+            raise HTTPException(status_code=500, detail="Failed to retrieve updated rule")
+            
+        # Convert to dictionary and return
+        return dict(updated_rule)
     
-    # Update fields
-    updates = {}
-    if update.review_note is not None:
-        updates["review_note"] = update.review_note
-    if update.investigation_note is not None:
-        updates["investigation_note"] = update.investigation_note
-    
-    if updates:
-        set_clause = ", ".join([f"{key} = ?" for key in updates.keys()])
-        values = list(updates.values())
-        values.append(rule_id)
-        cursor.execute(f"UPDATE AutoForwarding SET {set_clause} WHERE id = ?", values)
-        db.commit()
-    
-    # Get updated rule
-    cursor.execute("SELECT * FROM AutoForwarding WHERE id = ?", (rule_id,))
-    updated_rule = cursor.fetchone()
-    return dict(updated_rule)
+    except sqlite3.Error as e:
+        # Handle database errors
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        # Handle other errors
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error updating rule: {str(e)}")
 
 @app.delete("/rules/{rule_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_rule(rule_id: int, db: sqlite3.Connection = Depends(get_db)):
@@ -110,45 +127,3 @@ def get_statistics(db: sqlite3.Connection = Depends(get_db)):
         "rules_with_filters": with_filters,
         "rules_with_errors": with_errors
     }
-
-# Add a new endpoint to create rules
-@app.post("/rules/", response_model=ForwardingRule, status_code=status.HTTP_201_CREATED)
-def create_rule(rule: ForwardingRuleBase, db: sqlite3.Connection = Depends(get_db)):
-    """Create a new forwarding rule"""
-    cursor = db.cursor()
-    
-    # Check if email already exists
-    cursor.execute("SELECT id FROM AutoForwarding WHERE email = ?", (rule.email,))
-    existing = cursor.fetchone()
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already exists")
-    
-    # Insert new rule
-    columns = ["email", "name", "forwarding_email", "disposition", 
-               "has_forwarding_filters", "error", "review_note", "investigation_note"]
-    values = [
-        rule.email, 
-        rule.name, 
-        rule.forwarding_email, 
-        rule.disposition, 
-        rule.has_forwarding_filters, 
-        rule.error, 
-        rule.review_note, 
-        rule.investigation_note
-    ]
-    
-    placeholders = ", ".join(["?"] * len(columns))
-    columns_str = ", ".join(columns)
-    
-    cursor.execute(
-        f"INSERT INTO AutoForwarding ({columns_str}) VALUES ({placeholders})",
-        values
-    )
-    db.commit()
-    
-    # Get the created rule
-    rule_id = cursor.lastrowid
-    cursor.execute("SELECT * FROM AutoForwarding WHERE id = ?", (rule_id,))
-    created_rule = cursor.fetchone()
-    
-    return dict(created_rule)
