@@ -1,29 +1,6 @@
-from sqlalchemy import Column, Integer, String, Boolean, create_engine, Text
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
-
-# SQLAlchemy setup
-SQLALCHEMY_DATABASE_URL = "sqlite:///./email_forwarding.db"
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# SQLAlchemy Models
-class Base(DeclarativeBase):
-    pass
-
-class AutoForwarding(Base):
-    __tablename__ = "AutoForwarding"
-
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    name = Column(String)
-    forwarding_email = Column(String)
-    disposition = Column(String)
-    has_forwarding_filters = Column(Boolean)
-    error = Column(String)
-    review_note = Column(Text, nullable=True)
-    investigation_note = Column(Text, nullable=True)
+import sqlite3
 
 # Pydantic Models for API
 class ForwardingRuleBase(BaseModel):
@@ -50,5 +27,33 @@ class ForwardingRuleUpdate(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-# Create tables
-Base.metadata.create_all(bind=engine) 
+# Database initialization function
+def init_db():
+    """Initialize the SQLite database with the required table"""
+    conn = sqlite3.connect("email_forwarding.db")
+    cursor = conn.cursor()
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS AutoForwarding (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE,
+        name TEXT,
+        forwarding_email TEXT,
+        disposition TEXT,
+        has_forwarding_filters BOOLEAN,
+        error TEXT,
+        review_note TEXT,
+        investigation_note TEXT
+    )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Database connection function
+def get_db():
+    """Get a database connection with row factory set to return dictionaries"""
+    conn = sqlite3.connect("email_forwarding.db")
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# Initialize the database when this module is imported
+init_db() 

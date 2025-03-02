@@ -1,6 +1,23 @@
+# Assignment 2 Overview
+
+## Purpose
+For Assignment 2, I am creating an API for administrators to retrieve data acquired from Google Workspace for audit and cybersecurity purposes.
+
+## Implementation
+This API uses sample data about email forwarding rules, imported into a SQLite database via the `sample_data_import.py` script.
+
+## Core Functionality
+The main focus of this assignment is developing an API that allows administrators to:
+
+1. Access forwarding rule data from the database
+2. Review forwarding rules and mark them as:
+   - **Not malicious** - When forwarding serves a necessary business purpose
+   - **Under investigation** - During the period when administrators are investigating the rule
+   - **Delete entries** - When a user has confirmed the forwarding rule has been removed
+
 # Email Forwarding Rules Audit API
 
-This application provides a REST API for managing and auditing email forwarding rules.
+This application provides a REST API for auditing email forwarding rules.
 
 ## Prerequisites
 1. Python 3.13
@@ -12,8 +29,10 @@ This application provides a REST API for managing and auditing email forwarding 
    ```
    pip install -r requirements.txt
    ```
+2. Populate the sample data by running the sample_data_import.py
 
-2. Run the application:
+
+3. Run the application:
    ```
    python -m uvicorn main:app --reload
    ```
