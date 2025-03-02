@@ -1,8 +1,22 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
+from typing import Optional, List
 import sqlite3
 
 # Pydantic Models for API
+class ForwardingFilter(BaseModel):
+    id: Optional[int] = None
+    forwarding_id: int
+    email_address: str
+    created_at: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ForwardingFilterCreate(BaseModel):
+    email_address: str
+    created_at: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
 class ForwardingRuleBase(BaseModel):
     email: str
     name: str
@@ -19,6 +33,7 @@ class ForwardingRuleCreate(ForwardingRuleBase):
 
 class ForwardingRule(ForwardingRuleBase):
     id: int
+    filters: Optional[List[ForwardingFilter]] = None
 
 class ForwardingRuleUpdate(BaseModel):
     investigation_note: Optional[str] = None
@@ -27,7 +42,7 @@ class ForwardingRuleUpdate(BaseModel):
 
 # Database initialization function
 def init_db():
-    """Initialize the SQLite database with the required table"""
+    """Initialize the SQLite database with the required tables"""
     conn = sqlite3.connect("email_forwarding.db")
     cursor = conn.cursor()
     cursor.execute('''
@@ -42,6 +57,17 @@ def init_db():
         investigation_note TEXT
     )
     ''')
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS ForwardingFilters (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        forwarding_id INTEGER NOT NULL,
+        email_address TEXT NOT NULL,
+        created_at TEXT,
+        FOREIGN KEY (forwarding_id) REFERENCES AutoForwarding(id)
+    )
+    ''')
+    
     conn.commit()
     conn.close()
 

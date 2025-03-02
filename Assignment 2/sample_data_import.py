@@ -19,6 +19,18 @@ CREATE TABLE IF NOT EXISTS AutoForwarding (
 ''')
 conn.commit()
 
+# Create Table for Storing Forwarding Filters
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS ForwardingFilters (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    forwarding_id INTEGER NOT NULL,
+    email_address TEXT NOT NULL,
+    created_at TEXT,
+    FOREIGN KEY (forwarding_id) REFERENCES AutoForwarding(id)
+)
+''')
+conn.commit()
+
 # Function to Insert Data into the Database
 def store_autoforwarding_data(userForwardingData):
     for user in userForwardingData:
@@ -30,6 +42,7 @@ def store_autoforwarding_data(userForwardingData):
         error = user.get("error", None)
         investigation_note = user.get("investigation_note", None)
 
+        # Insert or update the AutoForwarding record
         cursor.execute('''
             INSERT INTO AutoForwarding (email, name, forwarding_email, disposition, has_forwarding_filters, error, investigation_note)
             VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -41,6 +54,24 @@ def store_autoforwarding_data(userForwardingData):
                 error=excluded.error,
                 investigation_note=excluded.investigation_note
         ''', (email, name, forwarding_email, disposition, has_filters, error, investigation_note))
+        
+        # Get the ID of the inserted/updated AutoForwarding record
+        cursor.execute("SELECT id FROM AutoForwarding WHERE email = ?", (email,))
+        forwarding_id = cursor.fetchone()[0]
+        
+        # Delete existing filters for this forwarding rule (to handle updates)
+        cursor.execute("DELETE FROM ForwardingFilters WHERE forwarding_id = ?", (forwarding_id,))
+        
+        # Insert filter details if they exist
+        if user["forwardingFilters"]:
+            for filter_item in user["forwardingFilters"]:
+                email_address = filter_item["emailAddress"]
+                created_at = filter_item.get("createdAt", None)
+                
+                cursor.execute('''
+                    INSERT INTO ForwardingFilters (forwarding_id, email_address, created_at)
+                    VALUES (?, ?, ?)
+                ''', (forwarding_id, email_address, created_at))
 
     conn.commit()
 
@@ -52,7 +83,7 @@ userForwardingData = [
         "autoForwarding": {"enabled": True, "emailAddress": "forwarding@example.com", "disposition": "keep"},
         "forwardingFilters": [{"emailAddress": "specific@example.com", "createdAt": "2024-02-28"}],
         "error": None,
-        "investigation_note": "Legitimate forwarding to personal account"
+        "investigation_note": "Legitimate forwarding to"
     },
     {
         "email": "user3@example.com", 
@@ -85,6 +116,13 @@ store_autoforwarding_data(userForwardingData)
 
 # Verify Data Stored
 cursor.execute("SELECT * FROM AutoForwarding")
+print("AutoForwarding Records:")
+for row in cursor.fetchall():
+    print(row)
+
+# Verify Filters Stored
+cursor.execute("SELECT * FROM ForwardingFilters")
+print("\nForwardingFilters Records:")
 for row in cursor.fetchall():
     print(row)
 
