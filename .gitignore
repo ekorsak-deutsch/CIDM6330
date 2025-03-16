@@ -43,6 +43,12 @@ Assignment\ 2/*.db
 Assignment\ 2/*.sqlite
 Assignment\ 2/*.sqlite3
 
+# SQLite database files in Assignment 3
+Assignment\ 3/*.db
+Assignment\ 3/*.sqlite
+Assignment\ 3/*.sqlite3
+
+
 # Logs
 logs/
 *.log

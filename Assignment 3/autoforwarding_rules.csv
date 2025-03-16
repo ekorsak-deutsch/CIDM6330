@@ -1,0 +1,5 @@
+id,email,name,forwarding_email,disposition,has_forwarding_filters,error,investigation_note
+1,user1@example.com,John Doe,forwarding@example.com,keep,True,,Legitimate forwarding to [Repository: csv]
+2,user3@example.com,Mary Johnson,mary.personal@example.com,archive,True,,Approved by manager on 2024-03-05 [Repository: csv]
+3,user4@example.com,Bob Wilson,bob.backup@example.com,trash,False,,Needs further investigation - external domain [Repository: csv]
+4,user2@example.com,Jane Smith,,,False,Permission denied,Error occurred during audit [Repository: csv]
