@@ -14,6 +14,19 @@ class AutoForwardingAdmin(admin.ModelAdmin):
 
 @admin.register(ForwardingFilter)
 class ForwardingFilterAdmin(admin.ModelAdmin):
-    list_display = ('email_address', 'forwarding', 'created_at')
-    search_fields = ('email_address', 'forwarding__email')
-    list_filter = ('created_at',) 
+    list_display = ('get_criteria_display', 'forwarding', 'created_at')
+    search_fields = ('forwarding__email',)
+    list_filter = ('created_at',)
+    
+    def get_criteria_display(self, obj):
+        """Display the criteria field in a readable format"""
+        if not obj.criteria:
+            return "No criteria"
+        
+        parts = []
+        for key, value in obj.criteria.items():
+            parts.append(f"{key}: {value}")
+        
+        return ", ".join(parts)
+    
+    get_criteria_display.short_description = "Criteria" 

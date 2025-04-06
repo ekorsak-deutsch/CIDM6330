@@ -1,10 +1,11 @@
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, ConfigDict
 
 
 class ForwardingFilterBase(BaseModel):
     """Base schema for Forwarding Filters"""
-    email_address: str
+    criteria: Dict[str, Any]
+    action: Dict[str, Any]
     created_at: Optional[str] = None
     
     model_config = ConfigDict(from_attributes=True)
@@ -49,9 +50,9 @@ class ForwardingRuleUpdate(BaseModel):
 
 
 class ForwardingRule(ForwardingRuleBase):
-    """Schema for Auto Forwarding rules with ID and filters"""
+    """Schema for Auto Forwarding rules with ID and filter"""
     id: int
-    filters: Optional[List[ForwardingFilter]] = None
+    filter: Optional[ForwardingFilter] = None
     
     model_config = ConfigDict(from_attributes=True)
 

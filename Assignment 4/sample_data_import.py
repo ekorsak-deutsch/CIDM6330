@@ -28,16 +28,15 @@ SAMPLE_DATA = [
         "has_forwarding_filters": True,
         "error": None,
         "investigation_note": "Legitimate forwarding to",
-        "filters": [
-            {
-                "email_address": "newsletter@company.com",
-                "created_at": "2024-01-15"
+        "filter": {
+            "criteria": {
+                "from": "newsletter@company.com"
             },
-            {
-                "email_address": "updates@company.com",
-                "created_at": "2024-01-20"
-            }
-        ]
+            "action": {
+                "forward": "john.archive@example.com"
+            },
+            "created_at": "2024-01-15"
+        }
     },
     {
         "email": "user3@example.com", 
@@ -47,12 +46,16 @@ SAMPLE_DATA = [
         "has_forwarding_filters": True, 
         "error": None,
         "investigation_note": "Approved by manager on 2024-03-05",
-        "filters": [
-            {
-                "email_address": "timesheet@company.com",
-                "created_at": "2024-02-10"
-            }
-        ]
+        "filter": {
+            "criteria": {
+                "subject": "timesheet"
+            },
+            "action": {
+                "addLabels": "IMPORTANT",
+                "forward": "mary.work@example.com"
+            },
+            "created_at": "2024-02-10"
+        }
     },
     {
         "email": "user4@example.com",
@@ -62,12 +65,17 @@ SAMPLE_DATA = [
         "has_forwarding_filters": True,
         "error": None,
         "investigation_note": "Needs further investigation - external domain",
-        "filters": [
-            {
-                "email_address": "hacky@hackyhackers.com",
-                "created_at": "2024-02-02"
-            }
-        ]
+        "filter": {
+            "criteria": {
+                "from": "hacky@hackyhackers.com",
+                "subject": "invoice"
+            },
+            "action": {
+                "addLabels": "TRASH",
+                "forward": "security@example.com"
+            },
+            "created_at": "2024-02-02"
+        }
     },
     {
         "email": "user2@example.com",
@@ -122,24 +130,25 @@ def store_autoforwarding_data(rule_repo, filter_repo, user_data):
             rule = rule_repo.create_rule(rule_data)
             rule_id = rule.id
             
-        # Delete existing filters
+        # Delete existing filter
         filter_repo.delete_filters_for_rule(rule_id)
         
-        # Create filters if they exist
-        filters = user.get("filters", [])
-        if filters:
-            for filter_item in filters:
-                email_address = filter_item.get("email_address")
-                created_at = filter_item.get("created_at")
-                
-                filter_data = {
-                    "forwarding_id": rule_id,
-                    "email_address": email_address,
-                    "created_at": created_at
-                }
-                
-                filter_repo.create_filter(filter_data)
-                
+        # Create filter if it exists
+        filter_data = user.get("filter")
+        if filter_data:
+            criteria = filter_data.get("criteria", {})
+            action = filter_data.get("action", {})
+            created_at = filter_data.get("created_at")
+            
+            filter_data = {
+                "forwarding_id": rule_id,
+                "criteria": criteria,
+                "action": action,
+                "created_at": created_at
+            }
+            
+            filter_repo.create_filter(filter_data)
+            
             # Ensure rule is marked as having filters
             if not rule.has_forwarding_filters:
                 rule_repo.update_rule(rule_id, {"has_forwarding_filters": True})
@@ -157,14 +166,16 @@ def print_repository_results(rule_repo, filter_repo):
     for rule in rules:
         print(f"ID: {rule.id}, Email: {rule.email}, Name: {rule.name}")
         
-        # Print filters for this rule
+        # Print filter for this rule
         filters = filter_repo.get_filters_for_rule(rule.id)
         if filters:
-            print("  Filters:")
+            print("  Filter:")
             for f in filters:
-                print(f"    ID: {f.id}, Email Address: {f.email_address}, Created At: {f.created_at}")
+                criteria_str = ", ".join([f"{k}: {v}" for k, v in f.criteria.items()])
+                action_str = ", ".join([f"{k}: {v}" for k, v in f.action.items()])
+                print(f"    ID: {f.id}, Criteria: {criteria_str}, Action: {action_str}, Created At: {f.created_at}")
         else:
-            print("  No filters")
+            print("  No filter")
         print()
 
     # Print statistics

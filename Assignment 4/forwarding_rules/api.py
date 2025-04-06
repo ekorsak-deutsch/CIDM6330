@@ -21,7 +21,7 @@ api = NinjaAPI(title="Email Forwarding Rules Audit API")
 rule_repo, filter_repo = create_repositories()
 
 # Helper function to convert database model to API schema
-def db_to_api_rule(db_rule, filters=None) -> ForwardingRule:
+def db_to_api_rule(db_rule, filter_obj=None) -> ForwardingRule:
     """Convert database model to API schema"""
     data = {
         "id": db_rule.id,
@@ -34,12 +34,16 @@ def db_to_api_rule(db_rule, filters=None) -> ForwardingRule:
         "investigation_note": db_rule.investigation_note,
     }
     
-    if filters is None:
-        # Get filters for the rule
+    if filter_obj is None:
+        # Get filter for the rule
         filters_list = filter_repo.get_filters_for_rule(data["id"])
-        filters = [db_to_api_filter(f) for f in filters_list]
+        if filters_list:
+            # Should be only one filter per rule
+            filter_obj = db_to_api_filter(filters_list[0])
+        else:
+            filter_obj = None
     
-    data["filters"] = filters
+    data["filter"] = filter_obj
     return ForwardingRule.model_validate(data)
 
 
@@ -49,7 +53,8 @@ def db_to_api_filter(db_filter) -> ForwardingFilter:
     data = {
         "id": db_filter.id,
         "forwarding_id": db_filter.forwarding_id,
-        "email_address": db_filter.email_address,
+        "criteria": db_filter.criteria,
+        "action": db_filter.action,
         "created_at": db_filter.created_at,
     }
     
@@ -74,11 +79,12 @@ def get_rule(request, rule_id: int = Path(...)):
     if not rule:
         return Response({"detail": "Rule not found"}, status=404)
     
-    # Get filters for the rule
+    # Get filter for the rule
     filters = filter_repo.get_filters_for_rule(rule_id)
+    filter_obj = filters[0] if filters else None
     
     # Convert to API schema
-    return db_to_api_rule(rule, [db_to_api_filter(f) for f in filters])
+    return db_to_api_rule(rule, db_to_api_filter(filter_obj) if filter_obj else None)
 
 
 @api.put("/rules/{rule_id}/investigation", response=ForwardingRule, tags=["rules"])
@@ -100,15 +106,9 @@ def update_investigation_note(request, rule_id: int, update: ForwardingRuleUpdat
             updated_rule = rule_repo.update_rule(rule_id, updates)
             if not updated_rule:
                 return Response({"detail": "Failed to update rule"}, status=500)
-            
-            # Get filters for the rule
-            filters = filter_repo.get_filters_for_rule(rule_id)
-            
-            # Convert to API schema
-            return db_to_api_rule(updated_rule, [db_to_api_filter(f) for f in filters])
         
-        # If no updates were provided, return the rule as is
-        return db_to_api_rule(rule)
+        # Return updated rule
+        return db_to_api_rule(rule if not updates else updated_rule)
     
     except Exception as e:
         # Handle errors
@@ -123,7 +123,7 @@ def delete_rule(request, rule_id: int):
     if not rule:
         return Response({"detail": "Rule not found"}, status=404)
     
-    # Delete filters for the rule
+    # Delete filter for the rule
     filter_repo.delete_filters_for_rule(rule_id)
     
     # Delete the rule
@@ -151,16 +151,18 @@ def get_statistics(request):
     return rule_repo.get_statistics()
 
 
-@api.get("/rules/{rule_id}/filters", response=List[ForwardingFilter], tags=["filters"])
-def get_rule_filters(request, rule_id: int):
-    """Get all filters for a specific forwarding rule"""
+@api.get("/rules/{rule_id}/filter", response=ForwardingFilter, tags=["filters"])
+def get_rule_filter(request, rule_id: int):
+    """Get the filter for a specific forwarding rule"""
     # Check if rule exists
     rule = rule_repo.get_rule_by_id(rule_id)
     if not rule:
         return Response({"detail": "Rule not found"}, status=404)
     
-    # Get filters for the rule
+    # Get filter for the rule
     filters = filter_repo.get_filters_for_rule(rule_id)
+    if not filters:
+        return Response({"detail": "Filter not found"}, status=404)
     
-    # Convert to API schemas
-    return [db_to_api_filter(f) for f in filters] 
+    # Convert to API schema
+    return db_to_api_filter(filters[0]) 

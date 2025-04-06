@@ -13,19 +13,21 @@ from forwarding_rules.schemas import (
     ForwardingFilterCreate
 )
 from pydantic import BaseModel, ConfigDict
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 # Pydantic Models for API
 class ForwardingFilter(BaseModel):
     id: Optional[int] = None
     forwarding_id: int
-    email_address: str
+    criteria: Dict[str, Any]
+    action: Dict[str, Any]
     created_at: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 class ForwardingFilterCreate(BaseModel):
-    email_address: str
+    criteria: Dict[str, Any]
+    action: Dict[str, Any]
     created_at: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -46,7 +48,7 @@ class ForwardingRuleCreate(ForwardingRuleBase):
 
 class ForwardingRule(ForwardingRuleBase):
     id: int
-    filters: Optional[List[ForwardingFilter]] = None
+    filter: Optional[ForwardingFilter] = None
 
 class ForwardingRuleUpdate(BaseModel):
     investigation_note: Optional[str] = None

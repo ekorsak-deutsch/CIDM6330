@@ -27,18 +27,24 @@ class ForwardingFilter(models.Model):
     """
     Django model for Forwarding Filters
     Stores filter details for email forwarding rules
+    
+    Each rule can have at most one filter with:
+    - criteria: JSON object with filter conditions (e.g. {"from": "example@example.com", "subject": "invoice"})
+    - action: JSON object with actions to take (e.g. {"forward": "backup@example.com", "addLabels": "TRASH"})
     """
-    forwarding = models.ForeignKey(
+    forwarding = models.OneToOneField(
         AutoForwarding, 
         on_delete=models.CASCADE, 
-        related_name='filters',
+        related_name='filter',
         db_column='forwarding_id'
     )
-    email_address = models.EmailField()
+    criteria = models.JSONField(help_text="Filter criteria (e.g. from, subject)")
+    action = models.JSONField(help_text="Actions to take (e.g. forward, addLabels)")
     created_at = models.CharField(max_length=50, null=True, blank=True)
     
     def __str__(self):
-        return f"Filter: {self.email_address} for {self.forwarding.email}"
+        criteria_str = ", ".join([f"{k}: {v}" for k, v in self.criteria.items()])
+        return f"Filter for {self.forwarding.email}: {criteria_str}"
     
     class Meta:
         db_table = 'forwardingfilter'
