@@ -25,9 +25,27 @@ The data model consists of two main entities:
 **AutoForwarding**: Stores information about email forwarding rules for users
 - Properties include: id, email, name, forwarding_email, disposition, has_forwarding_filters, error, investigation_note
 
-**ForwardingFilters**: Stores filter details for email forwarding rules 
-- Properties include: id, forwarding, email_address, created_at
-- Relationship: Many filters can belong to one forwarding rule (one-to-many)
+**ForwardingFilter**: Stores advanced filter configuration for an email forwarding rule
+- Properties include: 
+  - **id**: Filter identifier
+  - **criteria**: JSON object with filter conditions (e.g., `{"from": "example@example.com", "subject": "invoice"}`)
+  - **action**: JSON object with actions to take (e.g., `{"forward": "backup@example.com", "addLabels": "TRASH"}`)
+  - **created_at**: When the filter was created
+- Relationship: **One-to-one** with AutoForwarding rule - each rule can have at most one filter configuration
+
+## Filter Configuration
+
+Filters allow for sophisticated email routing rules based on specific criteria and actions:
+
+### Criteria Examples
+- `{"from": "newsletter@company.com"}` - Match emails from a specific sender
+- `{"subject": "invoice"}` - Match emails with specific text in the subject
+- `{"from": "partner@example.com", "subject": "urgent"}` - Match emails from a sender with specific subject
+
+### Action Examples
+- `{"forward": "archive@example.com"}` - Forward matching emails to an archive address
+- `{"addLabels": "IMPORTANT"}` - Add labels to matching emails
+- `{"forward": "security@example.com", "addLabels": "SPAM"}` - Multiple actions for matching emails
 
 ## API Endpoints
 
@@ -37,7 +55,7 @@ The data model consists of two main entities:
 - DELETE /api/rules/{rule_id} - Delete a rule
 - GET /api/rules/search/ - Search rules with filters
 - GET /api/stats/ - Get statistics about forwarding rules
-- GET /api/rules/{rule_id}/filters - Get filters for a specific rule
+- GET /api/rules/{rule_id}/filter - Get the filter for a specific rule (changed from /filters)
 
 ## Additional Django Admin Features
 
@@ -93,6 +111,7 @@ This implementation includes a Django admin interface for managing forwarding ru
   - **schemas.py**: Pydantic schemas for request/response validation
   - **repository.py**: Repository pattern implementation
   - **urls.py**: URL configuration for the app
+  - **migrations/**: Database migration files
   
 - **manage.py**: Django management script
 - **requirements.txt**: Project dependencies
@@ -147,9 +166,9 @@ Invoke-RestMethod -Uri "http://localhost:8000/api/rules/search/?has_filters=true
 Invoke-RestMethod -Uri "http://localhost:8000/api/stats/" -Method Get
 ```
 
-### Get Filters for a Specific Rule
+### Get Filter for a Specific Rule
 ```powershell
-Invoke-RestMethod -Uri "http://localhost:8000/api/rules/1/filters" -Method Get
+Invoke-RestMethod -Uri "http://localhost:8000/api/rules/1/filter" -Method Get
 ```
 
 ### Tips for Better Output
@@ -159,13 +178,21 @@ Invoke-RestMethod -Uri "http://localhost:8000/api/rules/1" -Method Get | Convert
 ```
 
 ## Key Differences from FastAPI Version
-
 1. **Routing**: Django's URL routing system vs. FastAPI's router
 2. **ORM**: Django ORM vs. SQLModel
 3. **Request Handling**: Django request/response cycle vs. FastAPI's dependency injection
-4. **Authentication**: Django's auth system vs. FastAPI's security utilities
-5. **Admin Interface**: Django's admin vs. no built-in admin in FastAPI
-6. **Migration System**: Django's migration system vs. SQLModel's alembic-based system
+4. **Admin Interface**: Django's admin vs. no built-in admin in FastAPI
+5. **Filter Structure**: JSON-based criteria and action fields vs. simple email address
+
+## Recent Changes
+
+### Filter Structure Enhancements
+- Changed from multiple filters per rule to one filter per rule (one-to-one relationship)
+- Redesigned filter to use two JSON fields:
+  - **criteria**: Contains filter matching conditions like sender or subject
+  - **action**: Contains actions to take when filter criteria match
+- Updated API endpoint from `/rules/{rule_id}/filters` to `/rules/{rule_id}/filter` to reflect the one-to-one relationship
+- Updated sample data to include examples of various filter criteria and actions
 
 ## Files Added, Changed, and Removed
 
@@ -188,13 +215,14 @@ Invoke-RestMethod -Uri "http://localhost:8000/api/rules/1" -Method Get | Convert
   - **urls.py**: URL routing specific to the API endpoints
   - **apps.py**: Django app configuration
   - **__init__.py**: Package marker
+  - **migrations/**: Database migration files
   
 #### Other Files
 - **.gitignore**: Git ignore file for Django-specific and Python files
 
 ### Changed Files
 
-- **sample_data_import.py**: Updated to work with Django's ORM models and repository structure
+- **sample_data_import.py**: Updated to work with Django's ORM models and the new filter structure
 - **requirements.txt**: Changed dependencies from FastAPI to Django and Django Ninja
 - **models.py** (root): Simplified to serve as compatibility layer, importing from new location
 
@@ -203,12 +231,14 @@ Invoke-RestMethod -Uri "http://localhost:8000/api/rules/1" -Method Get | Convert
 - **main.py**: The FastAPI application entry point, replaced by Django's structure
 - **Original models**: FastAPI/SQLModel-based models replaced by Django ORM models
 - **FastAPI router files**: Removed in favor of Django Ninja API endpoints
+- **CSV files**: No longer needed since we now exclusively use Django's ORM
 
 ### Migration Details
 
 This migration represents a full rewrite of the application from FastAPI to Django with Django Ninja, while maintaining:
-- The same API contract and endpoints
+- The same API contract (with minor changes to filter endpoints)
 - The repository pattern implementation
-- Similar data models and validation
+- Enhanced data models with more sophisticated filtering capabilities
+- One-to-one relationship between rules and filters
 
 The Django implementation adds the powerful Django admin interface and leverages Django's mature ecosystem while keeping the API-first approach through Django Ninja.
