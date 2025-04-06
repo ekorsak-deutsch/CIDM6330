@@ -66,7 +66,7 @@ def get_all_rules(request, skip: int = 0, limit: int = 100):
     return [db_to_api_rule(rule) for rule in rules]
 
 
-@api.get("/rules/{rule_id}", response=ForwardingRule, error_responses=[404], tags=["rules"])
+@api.get("/rules/{rule_id}", response=ForwardingRule, tags=["rules"])
 def get_rule(request, rule_id: int = Path(...)):
     """Get a specific forwarding rule by ID"""
     # Get rule from repository
@@ -81,7 +81,7 @@ def get_rule(request, rule_id: int = Path(...)):
     return db_to_api_rule(rule, [db_to_api_filter(f) for f in filters])
 
 
-@api.put("/rules/{rule_id}/investigation", response=ForwardingRule, error_responses=[404, 500], tags=["rules"])
+@api.put("/rules/{rule_id}/investigation", response=ForwardingRule, tags=["rules"])
 def update_investigation_note(request, rule_id: int, update: ForwardingRuleUpdate):
     """Update the investigation note for a forwarding rule"""
     try:
@@ -115,7 +115,7 @@ def update_investigation_note(request, rule_id: int, update: ForwardingRuleUpdat
         return Response({"detail": f"Error updating rule: {str(e)}"}, status=500)
 
 
-@api.delete("/rules/{rule_id}", response={204: None}, error_responses=[404, 500], tags=["rules"])
+@api.delete("/rules/{rule_id}", response={204: None}, tags=["rules"])
 def delete_rule(request, rule_id: int):
     """Delete a forwarding rule"""
     # Check if rule exists
@@ -151,7 +151,7 @@ def get_statistics(request):
     return rule_repo.get_statistics()
 
 
-@api.get("/rules/{rule_id}/filters", response=List[ForwardingFilter], error_responses=[404], tags=["filters"])
+@api.get("/rules/{rule_id}/filters", response=List[ForwardingFilter], tags=["filters"])
 def get_rule_filters(request, rule_id: int):
     """Get all filters for a specific forwarding rule"""
     # Check if rule exists

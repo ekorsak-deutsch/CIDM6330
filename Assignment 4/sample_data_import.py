@@ -27,7 +27,17 @@ SAMPLE_DATA = [
         "disposition": "keep",
         "has_forwarding_filters": True,
         "error": None,
-        "investigation_note": "Legitimate forwarding to"
+        "investigation_note": "Legitimate forwarding to",
+        "filters": [
+            {
+                "email_address": "newsletter@company.com",
+                "created_at": "2024-01-15"
+            },
+            {
+                "email_address": "updates@company.com",
+                "created_at": "2024-01-20"
+            }
+        ]
     },
     {
         "email": "user3@example.com", 
@@ -36,16 +46,28 @@ SAMPLE_DATA = [
         "disposition": "archive",
         "has_forwarding_filters": True, 
         "error": None,
-        "investigation_note": "Approved by manager on 2024-03-05"
+        "investigation_note": "Approved by manager on 2024-03-05",
+        "filters": [
+            {
+                "email_address": "timesheet@company.com",
+                "created_at": "2024-02-10"
+            }
+        ]
     },
     {
         "email": "user4@example.com",
         "name": "Bob Wilson",
         "forwarding_email": "bob.backup@example.com",
         "disposition": "trash",
-        "has_forwarding_filters": False,
+        "has_forwarding_filters": True,
         "error": None,
-        "investigation_note": "Needs further investigation - external domain"
+        "investigation_note": "Needs further investigation - external domain",
+        "filters": [
+            {
+                "email_address": "hacky@hackyhackers.com",
+                "created_at": "2024-02-02"
+            }
+        ]
     },
     {
         "email": "user2@example.com",
@@ -104,11 +126,11 @@ def store_autoforwarding_data(rule_repo, filter_repo, user_data):
         filter_repo.delete_filters_for_rule(rule_id)
         
         # Create filters if they exist
-        filters = user.get("forwardingFilters", [])
+        filters = user.get("filters", [])
         if filters:
             for filter_item in filters:
-                email_address = filter_item.get("emailAddress")
-                created_at = filter_item.get("createdAt")
+                email_address = filter_item.get("email_address")
+                created_at = filter_item.get("created_at")
                 
                 filter_data = {
                     "forwarding_id": rule_id,
