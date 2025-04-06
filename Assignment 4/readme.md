@@ -2,101 +2,21 @@
 
 ## Overview
 
-This application has been rewritten to use Django and Django Ninja, replacing the original FastAPI implementation. The application continues to provide a robust API for auditing email forwarding rules with multiple storage options through the repository pattern.
-
-## Why Django with Django Ninja?
-
-This implementation migrates the FastAPI application to Django with Django Ninja for several key advantages:
-
-1. **Django Ninja**: Provides FastAPI-like experience with type hints, automatic validation and API documentation
-2. **ORM Advantage**: Django's ORM is more mature and feature-rich than SQLModel
-3. **Admin Interface**: Built-in admin interface for managing data
-4. **Django's Security**: Built-in protection against CSRF, XSS, SQL injection, etc.
-5. **Deployment Flexibility**: More deployment options and better scaling capabilities
-
-While maintaining the same API contract and repository pattern implementation as the original.
+This application has been rewritten to use Django and Django Ninja, replacing the original FastAPI implementation. The application provides a robust API for auditing email forwarding rules with a Django ORM repository implementation.
 
 ## Core Functionality
 
 The main focus of this application is providing an API that allows administrators to:
 
-1. Access forwarding rule data from different data sources
+1. Access forwarding rule data from the database
 2. Review forwarding rules and add investigation notes, for example:
    - **Not malicious** - When forwarding serves a necessary business purpose
    - **Under investigation** - During the period when administrators are investigating the rule
    - **Delete entries** - When a user has confirmed the forwarding rule has been removed
 
-## Repository Pattern Implementation
+### Django Repository
 
-### Overview
-
-This API implements the Repository Pattern, a design pattern that abstracts the data access layer from the rest of the application. This provides several benefits:
-
-1. **Separation of concerns**: The business logic is separated from data access logic
-2. **Testability**: Makes it easier to unit test the application by mocking repositories
-3. **Flexibility**: Allows switching between different data storage mechanisms without changing the business logic
-
-### Repository Types
-
-The application supports three different repository implementations:
-
-1. **Django Repository**: Uses Django's ORM to interact with the database (replacing SQLModel)
-2. **CSV Repository**: Stores data in CSV files
-3. **In-Memory Repository**: Keeps data in memory, useful for testing
-
-### Repository Structure
-
-The repository implementation consists of:
-
-- **Base Interfaces**: Abstract base classes defining the operations repositories must implement
-- **Django Repository**: Interacts with a SQLite database using Django's ORM
-- **CSV Repository**: Reads and writes data to CSV files
-- **In-Memory Repository**: Stores data in memory
-
-## How to Use Different Repositories
-
-You can choose the repository type by setting the `REPO_TYPE` environment variable:
-
-```powershell
-# Use Django repository (default)
-python manage.py runserver
-
-# Use CSV repository
-$env:REPO_TYPE="csv"
-python manage.py runserver
-
-# Use in-memory repository (automatically loads sample data)
-$env:REPO_TYPE="memory"
-python manage.py runserver
-```
-
-## Important Notes
-
-- **Django repository**: Default repository that uses Django's ORM
-- **CSV repository**: Provides persistence without database requirements but with more limited querying capabilities
-- **In-memory repository**: 
-  - Automatically loads sample data when the API starts
-  - All data will be lost when the application is restarted
-  - Primarily useful for testing and demonstrations
-  - The repository type is reflected in each rule's investigation note for verification
-
-## Sample Data Import
-
-The `sample_data_import.py` script allows you to populate any of the repository types with sample data:
-
-```powershell
-# Using default Django repository
-python sample_data_import.py
-
-# Import to a specific repository type
-python sample_data_import.py --repo=django    # Django repository
-python sample_data_import.py --repo=csv       # CSV repository  
-
-# Import to all repository types at once
-python sample_data_import.py --repo=all
-```
-
-This makes it easy to test and compare the different repository implementations.
+The application uses Django's ORM to interact with the database, with repositories acting as an abstraction layer between the API and the database models.
 
 ## Data Model
 
@@ -163,7 +83,7 @@ This implementation includes a Django admin interface for managing forwarding ru
 ## Project Structure
 
 - **forwarding_audit/**: Django project settings package
-  - **settings.py**: Django settings including repository configuration
+  - **settings.py**: Django settings 
   - **urls.py**: Main URL configuration
   
 - **forwarding_rules/**: Django app containing the application logic
@@ -176,7 +96,7 @@ This implementation includes a Django admin interface for managing forwarding ru
   
 - **manage.py**: Django management script
 - **requirements.txt**: Project dependencies
-- **sample_data_import.py**: Script to populate repositories with sample data
+- **sample_data_import.py**: Script to populate the database with sample data
 
 ## API Documentation
 
@@ -247,17 +167,6 @@ Invoke-RestMethod -Uri "http://localhost:8000/api/rules/1" -Method Get | Convert
 5. **Admin Interface**: Django's admin vs. no built-in admin in FastAPI
 6. **Migration System**: Django's migration system vs. SQLModel's alembic-based system
 
-## Benefits of This Implementation
-
-1. **Complete Ecosystem**: Django provides a complete web framework ecosystem
-2. **Mature ORM**: Django's ORM is more mature and feature-rich
-3. **Admin Interface**: Built-in admin interface for data management
-4. **Community Support**: Larger community and more resources
-5. **Deployment Options**: More deployment options and better scaling
-6. **Security Features**: More built-in security features
-
-While maintaining the API-first approach and strong typing of the original FastAPI implementation through Django Ninja.
-
 ## Files Added, Changed, and Removed
 
 ### Added Files
@@ -301,6 +210,5 @@ This migration represents a full rewrite of the application from FastAPI to Djan
 - The same API contract and endpoints
 - The repository pattern implementation
 - Similar data models and validation
-- The ability to use different storage mechanisms (Django ORM, CSV, in-memory)
 
 The Django implementation adds the powerful Django admin interface and leverages Django's mature ecosystem while keeping the API-first approach through Django Ninja.
