@@ -18,6 +18,11 @@ The main focus of this application is providing an API that allows administrator
 
 The application uses Django's ORM to interact with the database, with repositories acting as an abstraction layer between the API and the database models.
 
+### Filter Implementation Notes
+- Each AutoForwarding rule can have exactly one ForwardingFilter (one-to-one relationship) - different forwarding filter for the same user can be reflected in a different AutoForwarding rule
+- The previous implementation that allowed multiple filter email addresses has been replaced with the more flexible JSON-based criteria and action fields to more realistically reflect gmail forwarding filters
+
+
 ## Data Model
 
 The data model consists of two main entities:
@@ -35,17 +40,21 @@ The data model consists of two main entities:
 
 ## Filter Configuration
 
-Filters allow for sophisticated email routing rules based on specific criteria and actions:
 
 ### Criteria Examples
 - `{"from": "newsletter@company.com"}` - Match emails from a specific sender
 - `{"subject": "invoice"}` - Match emails with specific text in the subject
 - `{"from": "partner@example.com", "subject": "urgent"}` - Match emails from a sender with specific subject
+- `{"to": "team@company.com"}` - Match emails sent to a specific recipient
+- `{"hasAttachment": true}` - Match emails with attachments
+- `{"size": ">5M"}` - Match emails larger than 5MB
 
 ### Action Examples
 - `{"forward": "archive@example.com"}` - Forward matching emails to an archive address
-- `{"addLabels": "IMPORTANT"}` - Add labels to matching emails
 - `{"forward": "security@example.com", "addLabels": "SPAM"}` - Multiple actions for matching emails
+- `{"forward": "manager@company.com", "addLabels": ["URGENT", "NEEDS_REVIEW"]}` - Forward and add multiple labels
+
+
 
 ## API Endpoints
 
@@ -55,7 +64,30 @@ Filters allow for sophisticated email routing rules based on specific criteria a
 - DELETE /api/rules/{rule_id} - Delete a rule
 - GET /api/rules/search/ - Search rules with filters
 - GET /api/stats/ - Get statistics about forwarding rules
-- GET /api/rules/{rule_id}/filter - Get the filter for a specific rule (changed from /filters)
+- GET /api/rules/{rule_id}/filter - Get the filter for a specific rule
+
+### Filter-Specific Endpoints
+
+The filter endpoints reflect the one-to-one relationship between rules and filters:
+
+#### GET /api/rules/{rule_id}/filter
+Returns the filter configuration for a specific rule, including both criteria and action JSON objects.
+
+Example response:
+```json
+{
+  "id": 1,
+  "criteria": {
+    "from": "newsletter@example.com",
+    "subject": "Weekly Update"
+  },
+  "action": {
+    "forward": "archive@company.com",
+    "addLabels": ["NEWSLETTER", "AUTOMATED"]
+  },
+  "created_at": "2023-04-15T10:30:00Z"
+}
+```
 
 ## Additional Django Admin Features
 
@@ -182,17 +214,17 @@ Invoke-RestMethod -Uri "http://localhost:8000/api/rules/1" -Method Get | Convert
 2. **ORM**: Django ORM vs. SQLModel
 3. **Request Handling**: Django request/response cycle vs. FastAPI's dependency injection
 4. **Admin Interface**: Django's admin vs. no built-in admin in FastAPI
-5. **Filter Structure**: JSON-based criteria and action fields vs. simple email address
+5. **Filter Structure**: Enhanced JSON-based filter model with criteria and action fields vs. simple email address filtering
 
 ## Recent Changes
 
 ### Filter Structure Enhancements
-- Changed from multiple filters per rule to one filter per rule (one-to-one relationship)
 - Redesigned filter to use two JSON fields:
-  - **criteria**: Contains filter matching conditions like sender or subject
-  - **action**: Contains actions to take when filter criteria match
+  - **criteria**: Contains filter matching conditions (from, to, subject, hasAttachment, size, etc.)
+  - **action**: Contains actions to take (forward, addLabels, delete, markRead, archive, etc.)
 - Updated API endpoint from `/rules/{rule_id}/filters` to `/rules/{rule_id}/filter` to reflect the one-to-one relationship
-- Updated sample data to include examples of various filter criteria and actions
+- Added comprehensive examples of filter criteria and actions in the documentation
+- Added detailed API endpoint documentation with request/response examples
 
 ## Files Added, Changed, and Removed
 
@@ -238,7 +270,5 @@ Invoke-RestMethod -Uri "http://localhost:8000/api/rules/1" -Method Get | Convert
 This migration represents a full rewrite of the application from FastAPI to Django with Django Ninja, while maintaining:
 - The same API contract (with minor changes to filter endpoints)
 - The repository pattern implementation
-- Enhanced data models with more sophisticated filtering capabilities
-- One-to-one relationship between rules and filters
 
 The Django implementation adds the powerful Django admin interface and leverages Django's mature ecosystem while keeping the API-first approach through Django Ninja.
