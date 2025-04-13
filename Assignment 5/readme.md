@@ -4,6 +4,21 @@
 
 This application has been enhanced with Celery and Redis to provide asynchronous task processing capabilities. It builds upon the Django and Django Ninja implementation from Assignment 4, adding the ability to generate comprehensive PDF reports of email forwarding rules.
 
+## Domain-Driven Design
+
+This project follows Domain-Driven Design (DDD) principles to ensure a shared understanding between technical and business stakeholders. A comprehensive domain glossary has been created to establish a ubiquitous language.
+
+### Domain Glossary
+
+The `domain_glossary.md` file contains the official terminology used throughout the application. This glossary:
+
+- Defines all key domain concepts precisely
+- Establishes relationships between concepts
+- Provides examples to aid understanding
+- Serves as the single source of truth for domain language
+
+Refer to this glossary when discussing features, writing documentation, or implementing code to ensure consistent use of domain terminology across the entire project.
+
 ## Core Functionality
 
 The main focus of this application is providing an API that allows administrators to:
@@ -362,11 +377,47 @@ docker ps | grep web
   - **urls.py**: URL configuration for the app
   - **tasks.py**: Celery tasks for asynchronous processing
   - **migrations/**: Database migration files
+  - **tests.py**: Unit tests for the API endpoints
   
 - **manage.py**: Django management script
 - **requirements.txt**: Project dependencies
 - **sample_data_import.py**: Script to populate the database with sample data
 - **reports/**: Directory for storing generated PDF reports
+- **sample_reports/**: Examples of generated reports for reference
+- **tests_description.md**: Detailed descriptions of the unit tests
+- **domain_glossary.md**: Ubiquitous language definitions for domain-driven design
+
+## Testing
+
+Unit tests have been implemented to verify the functionality of all API endpoints. The tests use Django's testing framework and unittest.mock to isolate the components being tested.
+
+### Testing Documentation
+
+The test documentation in `tests_description.md` includes:
+- Detailed descriptions of each test
+- **Gherkin notation** for BDD-style test scenarios
+- Clear specification of expected behaviors and edge cases
+- Information about the testing approach
+
+Gherkin notation (Given-When-Then format) helps communicate the test scenarios in a human-readable way that bridges the gap between technical and non-technical stakeholders.
+
+### Running Tests
+
+To run the tests in your Docker environment:
+
+```bash
+docker-compose exec web python manage.py test forwarding_rules
+```
+
+### Test Coverage
+
+The tests cover:
+- All API endpoints (CRUD operations for rules and filters)
+- Report generation endpoints with mocked Celery tasks
+- Error cases and edge conditions
+- Parameter validation
+
+See `tests_description.md` for detailed information about each test.
 
 ## API Documentation
 
