@@ -10,27 +10,21 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from .repository import create_repositories
 
 
-@shared_task
-def generate_rules_report(report_name=None):
+def _create_report_base(report_name, title_text):
     """
-    Generate a PDF report of all forwarding rules in the database
+    Create a base report with common elements
     
     Args:
-        report_name: Optional name for the report file
+        report_name: Name for the report file
+        title_text: Title text for the report
         
     Returns:
-        str: Path to the generated PDF report
+        tuple: (doc, elements, styles, report_path)
     """
-    # Create repositories to access data
-    rule_repo, filter_repo = create_repositories()
-    
-    # Get all rules and their filters
-    rules = rule_repo.get_all_rules()
-    
     # Generate filename based on timestamp if not provided
     if not report_name:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        report_name = f"forwarding_rules_report_{timestamp}.pdf"
+        report_name = report_name or f"{title_text.lower().replace(' ', '_')}_{timestamp}.pdf"
     
     # Full path to the report file
     report_path = os.path.join(settings.REPORTS_DIR, report_name)
@@ -51,18 +45,10 @@ def generate_rules_report(report_name=None):
     # Styles
     styles = getSampleStyleSheet()
     title_style = styles['Heading1']
-    heading_style = styles['Heading2']
     normal_style = styles['Normal']
     
-    # Custom styles
-    section_style = ParagraphStyle(
-        'SectionStyle',
-        parent=styles['Heading2'],
-        spaceAfter=12
-    )
-    
     # Add title
-    title = Paragraph("Email Forwarding Rules Audit Report", title_style)
+    title = Paragraph(title_text, title_style)
     elements.append(title)
     elements.append(Spacer(1, 12))
     
@@ -71,6 +57,20 @@ def generate_rules_report(report_name=None):
     timestamp_paragraph = Paragraph(f"Generated: {timestamp}", normal_style)
     elements.append(timestamp_paragraph)
     elements.append(Spacer(1, 24))
+    
+    return doc, elements, styles, report_path
+
+
+def _add_statistics_section(elements, rule_repo, styles):
+    """
+    Add statistics section to the report
+    
+    Args:
+        elements: List of report elements
+        rule_repo: Repository for forwarding rules
+        styles: Report styles
+    """
+    heading_style = styles['Heading2']
     
     # Add statistics
     stats = rule_repo.get_statistics()
@@ -97,6 +97,27 @@ def generate_rules_report(report_name=None):
     
     elements.append(stats_table)
     elements.append(Spacer(1, 24))
+
+
+def _add_rules_section(elements, rules, filter_repo, styles, include_filters=True):
+    """
+    Add rules section to the report
+    
+    Args:
+        elements: List of report elements
+        rules: List of rules
+        filter_repo: Repository for filters
+        styles: Report styles
+        include_filters: Whether to include filter information
+    """
+    heading_style = styles['Heading2']
+    
+    # Custom styles
+    section_style = ParagraphStyle(
+        'SectionStyle',
+        parent=styles['Heading2'],
+        spaceAfter=12
+    )
     
     # Add rules details
     elements.append(Paragraph("Forwarding Rules", heading_style))
@@ -134,42 +155,164 @@ def generate_rules_report(report_name=None):
         elements.append(rule_table)
         elements.append(Spacer(1, 12))
         
-        # Get filters for this rule
-        filters = filter_repo.get_filters_for_rule(rule.id)
-        
-        if filters:
-            elements.append(Paragraph("Filter Configuration:", styles['Heading3']))
+        # Add filter information if requested
+        if include_filters and rule.has_forwarding_filters:
+            # Get filters for this rule
+            filters = filter_repo.get_filters_for_rule(rule.id)
             
-            for filter_obj in filters:
-                # Format JSON for better presentation
-                criteria_str = json.dumps(filter_obj.criteria, indent=2)
-                action_str = json.dumps(filter_obj.action, indent=2)
+            if filters:
+                elements.append(Paragraph("Filter Configuration:", styles['Heading3']))
                 
-                filter_data = [
-                    ["Attribute", "Value"],
-                    ["Filter ID", str(filter_obj.id)],
-                    ["Created At", filter_obj.created_at or "Unknown"],
-                    ["Criteria", criteria_str],
-                    ["Action", action_str]
-                ]
-                
-                filter_table = Table(filter_data, colWidths=[150, 250])
-                filter_table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (1, 0), colors.lightblue),
-                    ('TEXTCOLOR', (0, 0), (1, 0), colors.black),
-                    ('ALIGN', (0, 0), (1, 0), 'CENTER'),
-                    ('FONTNAME', (0, 0), (1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (1, 0), 12),
-                    ('BOTTOMPADDING', (0, 0), (1, 0), 12),
-                    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ]))
-                
-                elements.append(filter_table)
-                elements.append(Spacer(1, 12))
+                for filter_obj in filters:
+                    # Format JSON for better presentation
+                    criteria_str = json.dumps(filter_obj.criteria, indent=2)
+                    action_str = json.dumps(filter_obj.action, indent=2)
+                    
+                    filter_data = [
+                        ["Attribute", "Value"],
+                        ["Filter ID", str(filter_obj.id)],
+                        ["Created At", filter_obj.created_at or "Unknown"],
+                        ["Criteria", criteria_str],
+                        ["Action", action_str]
+                    ]
+                    
+                    filter_table = Table(filter_data, colWidths=[150, 250])
+                    filter_table.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (1, 0), colors.lightblue),
+                        ('TEXTCOLOR', (0, 0), (1, 0), colors.black),
+                        ('ALIGN', (0, 0), (1, 0), 'CENTER'),
+                        ('FONTNAME', (0, 0), (1, 0), 'Helvetica-Bold'),
+                        ('FONTSIZE', (0, 0), (1, 0), 12),
+                        ('BOTTOMPADDING', (0, 0), (1, 0), 12),
+                        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ]))
+                    
+                    elements.append(filter_table)
+                    elements.append(Spacer(1, 12))
         
         # Add separator between rules
         elements.append(Spacer(1, 24))
+
+
+@shared_task
+def generate_rules_report(report_name=None):
+    """
+    Generate a PDF report of all forwarding rules in the database with filter details
+    
+    Args:
+        report_name: Optional name for the report file
+        
+    Returns:
+        str: Path to the generated PDF report
+    """
+    # Create repositories to access data
+    rule_repo, filter_repo = create_repositories()
+    
+    # Get all rules
+    rules = rule_repo.get_all_rules()
+    
+    # Create report base
+    doc, elements, styles, report_path = _create_report_base(
+        report_name, 
+        "Email Forwarding Rules Audit Report"
+    )
+    
+    # Add statistics section
+    _add_statistics_section(elements, rule_repo, styles)
+    
+    # Add rules section with filters
+    _add_rules_section(elements, rules, filter_repo, styles, include_filters=True)
+    
+    # Build the PDF
+    doc.build(elements)
+    
+    # Return the path to the generated report
+    return report_path
+
+
+@shared_task
+def generate_stats_report(report_name=None):
+    """
+    Generate a PDF report with only statistics about forwarding rules
+    
+    Args:
+        report_name: Optional name for the report file
+        
+    Returns:
+        str: Path to the generated PDF report
+    """
+    # Create repositories to access data
+    rule_repo, filter_repo = create_repositories()
+    
+    # Create report base with appropriate name
+    if not report_name:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        report_name = f"stats_report_{timestamp}.pdf"
+        
+    doc, elements, styles, report_path = _create_report_base(
+        report_name, 
+        "Email Forwarding Rules Statistics Report"
+    )
+    
+    # Add statistics section
+    _add_statistics_section(elements, rule_repo, styles)
+    
+    # Add summary paragraph
+    normal_style = styles['Normal']
+    summary = Paragraph(
+        "This report contains only statistical information about email forwarding rules. "
+        "For detailed information about individual rules, please generate a complete report.",
+        normal_style
+    )
+    elements.append(summary)
+    
+    # Build the PDF
+    doc.build(elements)
+    
+    # Return the path to the generated report
+    return report_path
+
+
+@shared_task
+def generate_rules_only_report(report_name=None):
+    """
+    Generate a PDF report of all forwarding rules without filter details
+    
+    Args:
+        report_name: Optional name for the report file
+        
+    Returns:
+        str: Path to the generated PDF report
+    """
+    # Create repositories to access data
+    rule_repo, filter_repo = create_repositories()
+    
+    # Get all rules
+    rules = rule_repo.get_all_rules()
+    
+    # Create report base with appropriate name
+    if not report_name:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        report_name = f"rules_only_report_{timestamp}.pdf"
+        
+    doc, elements, styles, report_path = _create_report_base(
+        report_name, 
+        "Email Forwarding Rules Only Report"
+    )
+    
+    # Add rules section without filters
+    _add_rules_section(elements, rules, filter_repo, styles, include_filters=False)
+    
+    # Add note about filters being excluded
+    normal_style = styles['Normal']
+    note = Paragraph(
+        "Note: This report contains only basic information about forwarding rules. "
+        "Filter details have been excluded. For complete information including filters, "
+        "please generate a full report.",
+        normal_style
+    )
+    elements.append(note)
     
     # Build the PDF
     doc.build(elements)

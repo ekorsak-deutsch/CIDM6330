@@ -8,12 +8,13 @@ from .schemas import (
     ForwardingRuleUpdate,
     ForwardingFilter,
     ForwardingFilterCreate,
-    Error
+    Error,
+    Message
 )
 from .repository import create_repositories
 from .models import AutoForwarding as DjangoAutoForwarding
 from .models import ForwardingFilter as DjangoForwardingFilter
-from .tasks import generate_rules_report
+from .tasks import generate_rules_report, generate_stats_report, generate_rules_only_report
 
 # Create API instance
 api = NinjaAPI(title="Email Forwarding Rules Audit API")
@@ -169,26 +170,37 @@ def get_rule_filter(request, rule_id: int):
     return db_to_api_filter(filters[0])
 
 
-@api.post("/reports/generate", response={202: dict}, tags=["reports"])
-def generate_report(request, report_name: Optional[str] = None):
+@api.post("/reports/generate", response={200: Message}, tags=["reports"])
+def generate_full_report_api(request, report_name: str = None):
     """
     Generate a PDF report of all forwarding rules
     
-    This is an asynchronous operation that will run in the background.
-    The report will be saved to the reports directory.
-    
-    Args:
-        report_name: Optional custom name for the report file
-        
-    Returns:
-        A confirmation message and task ID
+    This operation is asynchronous and will return immediately.
+    The report will be generated in the background.
     """
-    # Generate report asynchronously with Celery
     task = generate_rules_report.delay(report_name)
+    return {"message": f"Report generation started (task id: {task.id})"}
+
+
+@api.post("/reports/stats", response={200: Message}, tags=["reports"])
+def generate_stats_report_api(request, report_name: str = None):
+    """
+    Generate a PDF report containing only statistics about forwarding rules
     
-    # Return a success message with the task ID
-    return 202, {
-        "message": "Report generation started",
-        "task_id": task.id,
-        "status": "The report will be saved to the reports directory."
-    } 
+    This operation is asynchronous and will return immediately.
+    The report will be generated in the background.
+    """
+    task = generate_stats_report.delay(report_name)
+    return {"message": f"Statistics report generation started (task id: {task.id})"}
+
+
+@api.post("/reports/rules-only", response={200: Message}, tags=["reports"])
+def generate_rules_only_report_api(request, report_name: str = None):
+    """
+    Generate a PDF report of all forwarding rules without filter details
+    
+    This operation is asynchronous and will return immediately.
+    The report will be generated in the background.
+    """
+    task = generate_rules_only_report.delay(report_name)
+    return {"message": f"Rules-only report generation started (task id: {task.id})"} 

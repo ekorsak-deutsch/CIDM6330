@@ -127,6 +127,41 @@ The generated PDF report includes:
 - Detailed listing of all forwarding rules
 - Filter configuration details for rules with filters
 
+### Reports
+
+The API provides PDF report generation capabilities through asynchronous Celery tasks:
+
+#### Report Types
+
+1. **Complete Report** - `POST /api/reports/generate`
+   - Comprehensive report with statistics and detailed information about all forwarding rules including their filter configurations
+   - Useful for audits and compliance documentation
+   - Contains rich data about each rule and its associated filter
+
+2. **Statistics-Only Report** - `POST /api/reports/stats`
+   - Concise report containing only statistical information about forwarding rules
+   - Provides aggregate data such as total rules, rules with filters, etc.
+   - Ideal for management overviews and trend analysis
+
+3. **Rules-Only Report** - `POST /api/reports/rules-only`
+   - Detailed listing of all forwarding rules without filter information
+   - Offers a middle ground between the comprehensive and statistics-only reports
+   - Useful when filter details aren't relevant to the audience
+
+All report generation endpoints accept an optional `report_name` parameter to customize the filename.
+
+Reports are generated asynchronously using Celery tasks and are saved to the `reports` directory.
+
+#### Sample Reports
+
+For reference, sample reports of each type have been included in the `sample_reports` folder:
+
+- **Complete Report**: Full audit report with all forwarding rules and their filter details
+- **Statistics-Only Report**: Report focused solely on the statistics of forwarding rules
+- **Rules-Only Report**: Report showing forwarding rules without filter configurations
+
+These sample reports demonstrate the format and content of each report type, making it easier to understand the differences between them without having to generate them yourself. They were generated using the Celery tasks and can be used as examples for customizing or extending the reporting functionality.
+
 ## Additional Django Admin Features
 
 This implementation includes a Django admin interface for managing forwarding rules:
@@ -135,6 +170,22 @@ This implementation includes a Django admin interface for managing forwarding ru
 - Create, read, update, and delete forwarding rules and filters
 - Filter and search capabilities
 - Manage related data
+
+### Generate a Statistics-Only PDF Report
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/reports/stats" -Method Post
+```
+
+### Generate a Rules-Only PDF Report
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/reports/rules-only" -Method Post
+```
+
+### Tips for Better Output
+For better readability, format the JSON output:
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/rules/1" -Method Get | ConvertTo-Json -Depth 5
+```
 
 ## Prerequisites
 
@@ -383,6 +434,16 @@ $reportParams = @{
 } | ConvertTo-Json
 
 Invoke-RestMethod -Uri "http://localhost:8000/api/reports/generate" -Method Post -Body $reportParams -ContentType "application/json"
+```
+
+### Generate a Statistics-Only PDF Report
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/reports/stats" -Method Post
+```
+
+### Generate a Rules-Only PDF Report
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/reports/rules-only" -Method Post
 ```
 
 ### Tips for Better Output

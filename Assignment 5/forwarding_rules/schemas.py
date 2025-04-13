@@ -59,4 +59,9 @@ class ForwardingRule(ForwardingRuleBase):
 
 class Error(BaseModel):
     """Schema for error responses"""
-    detail: str 
+    detail: str
+
+
+class Message(BaseModel):
+    """Schema for simple message responses"""
+    message: str 
