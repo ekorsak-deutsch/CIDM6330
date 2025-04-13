@@ -181,14 +181,22 @@ Copy the output and add it to your `.env` file.
 
 IMPORTANT: Never commit your actual SECRET_KEY to version control. The `.env` file is included in `.gitignore` to prevent this, but be careful when sharing your code.
 
-## Installation Steps
+## Installation and Running the Application
 
-1. Install the required packages:
-   ```
-   pip install -r requirements.txt
-   ```
+This application uses Docker and Docker Compose to create a containerized environment with all the necessary components:
+- Django web application
+- Celery worker for asynchronous tasks
+- Redis for message broker
+- Reports volume for PDF storage
 
-2. Set up environment variables:
+### Prerequisites
+
+1. Docker and Docker Compose installed on your system
+2. Basic familiarity with Docker commands
+
+### Setup Steps
+
+1. Set up environment variables:
    ```
    cp .env.template .env
    ```
@@ -198,43 +206,94 @@ IMPORTANT: Never commit your actual SECRET_KEY to version control. The `.env` fi
    python -c "import secrets; print('SECRET_KEY=' + secrets.token_urlsafe(50))"
    ```
 
-3. Start Redis using Docker:
+2. Start all services with Docker Compose:
    ```
-   docker-compose up -d redis
+   docker-compose up
    ```
    
-   This will start a Redis container in the background using the configuration in docker-compose.yml.
-   
-   Alternatively, if you don't want to use Docker, you can install Redis directly:
-   - **Windows**: Download and install from https://github.com/tporadowski/redis/releases
-   - **Linux**: `sudo apt install redis-server`
-   - **macOS**: `brew install redis`
-   And then start it with: `redis-server`
-
-4. Apply database migrations:
+   Or to run in the background:
    ```
-   python manage.py migrate
+   docker-compose up -d
    ```
 
-5. Create a superuser for the admin interface (optional):
+3. Apply database migrations (first time only):
    ```
-   python manage.py createsuperuser
-   ```
-
-6. Populate the sample data:
-   ```
-   python sample_data_import.py
+   docker-compose exec web python manage.py migrate
    ```
 
-7. Start Celery worker in a separate terminal:
+4. Create a superuser for the admin interface (optional):
    ```
-  python -m celery -A forwarding_audit worker --loglevel=info
+   docker-compose exec web python manage.py createsuperuser
    ```
 
-8. Run the Django application:
+5. Populate the sample data:
    ```
-   python manage.py runserver
+   docker-compose exec web python sample_data_import.py
    ```
+
+### Managing Docker Services
+
+- **View logs**:
+  ```
+  docker-compose logs -f celery
+  ```
+
+- **Restart a service**:
+  ```
+  docker-compose restart celery
+  ```
+
+- **Stop all services**:
+  ```
+  docker-compose down
+  ```
+
+- **Rebuild after changes**:
+  ```
+  docker-compose build
+  docker-compose up
+  ```
+
+### Accessing Generated PDF Reports
+
+When running in Docker, the PDF reports are generated inside the container's filesystem. To access these reports from your local machine, you have several options:
+
+#### View Available Reports
+
+To see a list of all generated reports:
+```
+docker-compose exec web ls -la /app/reports
+```
+
+#### Copy a Specific Report to Your Local Machine
+
+To copy a specific report (replace the filename with your actual report name):
+```
+docker cp assignment5-web-1:/app/reports/forwarding_rules_report_20250413_150231.pdf ./
+```
+
+#### Copy All Reports to a Local Directory
+
+To copy all reports to a local 'reports' directory:
+```
+# Create a local reports directory if it doesn't exist
+mkdir -p reports
+
+# Copy all reports from the container
+docker cp assignment5-web-1:/app/reports/. ./reports/
+```
+
+#### Find the Container Name
+
+If you're not sure about the container name (e.g., if it's not 'assignment5-web-1'), you can find it with:
+```
+docker-compose ps
+```
+
+Or with the docker command:
+```
+docker ps | grep web
+```
 
 ## Project Structure
 
@@ -350,183 +409,24 @@ For a production deployment, consider the following:
 
 ## Troubleshooting
 
+### Docker Issues
+- If Docker containers won't start, ensure Docker Desktop (Windows/Mac) or Docker Engine (Linux) is running
+- For permission issues: on Linux, you might need to run commands with sudo or add your user to the docker group
+
 ### Redis Connection Issues
 If you encounter Redis connection issues:
-
-#### When using Docker:
 - Check if the Redis container is running: `docker ps` should show the redis container
 - Check Redis container logs: `docker logs assignment5-redis-1`
-- Ensure the REDIS_HOST in your .env file is set to 'redis' when using Docker
-
-#### When using a locally installed Redis:
-- Verify Redis is running: `redis-cli ping` should return "PONG"
-- Check Redis connection settings in .env file (REDIS_HOST should be 'localhost')
-- Ensure Redis port (default 6379) is not blocked by a firewall
+- Ensure the REDIS_HOST in your .env file is set to 'redis'
 
 ### Celery Worker Issues
 If Celery workers are not processing tasks:
-- Ensure the Celery worker is running
-- Check Celery logs for errors
-- Verify Redis connection is working
-- Try restarting the Celery worker
+- Check Celery container logs: `docker-compose logs celery`
+- Verify Redis container is healthy: `docker-compose ps`
+- Try restarting the Celery service: `docker-compose restart celery`
 
 ### Environment Variables Issues
 - If you get a "SECRET_KEY not set" error, ensure you've:
   1. Created a proper .env file (you can use .env.template as a starting point)
   2. Generated and added a SECRET_KEY to your .env file
   3. Confirmed that python-dotenv is installed
-
-### Docker Issues
-- If Docker containers won't start, ensure Docker Desktop (Windows/Mac) or Docker Engine (Linux) is running
-- For permission issues: on Linux, you might need to run commands with sudo or add your user to the docker group
-
-## Redis Configuration with Docker
-
-When running Redis in Docker and connecting to it from your local machine (outside Docker), there are two important configurations to understand:
-
-### Connection Address
-
-- **For applications running directly on your machine** (Django and Celery in this case):
-  ```
-  REDIS_HOST=localhost
-  ```
-  This is because Docker maps the container's port to your localhost.
-
-- **For applications running inside Docker** connecting to the Redis container:
-  ```
-  REDIS_HOST=redis  
-  ```
-  This would use the Docker service name instead.
-
-The default configuration in `.env.template` is set for Docker, but when you copy it to `.env`, you'll need to adjust it based on where your application is running relative to Redis.
-
-### Troubleshooting Redis Connection
-
-If you see this error with Celery:
-```
-Cannot connect to redis://redis:6379/0: Error 11001 connecting to redis:6379. getaddrinfo failed
-```
-
-It means Celery is trying to connect to "redis" hostname which doesn't exist from your computer. Change the REDIS_HOST in your .env file to "localhost" since your Django and Celery are running directly on your computer, not in Docker.
-
-## Running the Application with Docker
-
-To avoid Python version compatibility issues with Celery, you can run the entire application stack using Docker:
-
-### Prerequisites for Docker Approach
-
-1. Docker and Docker Compose installed on your system
-2. Basic familiarity with Docker commands
-
-### Docker Setup Steps
-
-1. Set up environment variables in `.env` (make sure REDIS_HOST is set to `redis`):
-   ```
-   # Redis Configuration
-   REDIS_HOST=redis
-   REDIS_PORT=6379
-   REDIS_DB=0
-   
-   # Django Configuration
-   DEBUG=True
-   ALLOWED_HOSTS=localhost,127.0.0.1
-   
-   # Add your SECRET_KEY here
-   SECRET_KEY=your_generated_key
-   ```
-
-2. Start all services with Docker Compose:
-   ```
-   docker-compose up
-   ```
-   
-   Or to run in the background:
-   ```
-   docker-compose up -d
-   ```
-
-3. To run only specific services (e.g., just Redis and Celery):
-   ```
-   docker-compose up redis celery
-   ```
-
-4. Apply database migrations (first time only):
-   ```
-   docker-compose exec web python manage.py migrate
-   ```
-
-5. Create a superuser (optional):
-   ```
-   docker-compose exec web python manage.py createsuperuser
-   ```
-
-6. Import sample data (first time only):
-   ```
-   docker-compose exec web python sample_data_import.py
-   ```
-
-### Managing Docker Services
-
-- **View logs**:
-  ```
-  docker-compose logs -f celery
-  ```
-
-- **Restart a service**:
-  ```
-  docker-compose restart celery
-  ```
-
-- **Stop all services**:
-  ```
-  docker-compose down
-  ```
-
-- **Rebuild after changes**:
-  ```
-  docker-compose build
-  docker-compose up
-  ```
-
-### Accessing Generated PDF Reports
-
-When running in Docker, the PDF reports are generated inside the container's filesystem. To access these reports from your local machine, you have several options:
-
-#### View Available Reports
-
-To see a list of all generated reports:
-```
-docker-compose exec web ls -la /app/reports
-```
-
-#### Copy a Specific Report to Your Local Machine
-
-To copy a specific report (replace the filename with your actual report name):
-```
-docker cp assignment5-web-1:/app/reports/forwarding_rules_report_20250413_150231.pdf ./
-```
-
-#### Copy All Reports to a Local Directory
-
-To copy all reports to a local 'reports' directory:
-```
-# Create a local reports directory if it doesn't exist
-mkdir -p reports
-
-# Copy all reports from the container
-docker cp assignment5-web-1:/app/reports/. ./reports/
-```
-
-#### Find the Container Name
-
-If you're not sure about the container name (e.g., if it's not 'assignment5-web-1'), you can find it with:
-```
-docker-compose ps
-```
-
-Or with the docker command:
-```
-docker ps | grep web
-```
-
-This Docker-based approach ensures all services are running with compatible versions and properly networked together.
