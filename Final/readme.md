@@ -54,6 +54,109 @@ This diagram shows the workflow of the report generation process.
 
 ![Activity diagram - Report Generation](UML/Activity%20diagram%20-%20Report%20Generation.jpeg)
 
+## Application Specification
+
+### Requirements Statements
+
+#### Functional Requirements
+- The system must provide a way to view all forwarding rules in the organization.
+- The system must allow security analysts to add investigation notes to forwarding rules.
+- The system must allow administrators to delete forwarding rules after investigation.
+- The system must provide a search capability to find forwarding rules by email address.
+- The system must detect and display complex forwarding filters associated with rules.
+- The system must generate PDF reports of forwarding rules for compliance documentation.
+- The system must process report generation asynchronously to maintain performance.
+- The system must provide statistics about forwarding rules across the organization.
+
+#### Non-Functional Requirements
+- The system must be containerized for easy deployment.
+- The system must use asynchronous processing for time-consuming operations.
+- The system must expose a well-documented API for integration.
+- The system must be built using Domain-Driven Design principles.
+- The system must include comprehensive test coverage.
+- The system must handle concurrent requests efficiently.
+
+### User Stories, Use Cases, Features
+
+#### User Stories
+- **As a security analyst**, I want to view all email forwarding rules so that I can identify potentially risky configurations.
+- **As a security analyst**, I want to add investigation notes to forwarding rules so that I can document my findings and track the investigation progress.
+- **As a system administrator**, I want to delete forwarding rules after investigation so that I can remediate security risks.
+- **As a compliance officer**, I want to generate comprehensive reports of forwarding rules so that I can provide documentation during audits.
+- **As a security manager**, I want to see statistics about forwarding rules so that I can assess the overall risk posture.
+- **As a security analyst**, I want to search for forwarding rules by email address so that I can focus on specific users or domains of concern.
+
+#### Use Cases
+- **UC01:** Viewing all forwarding rules in the organization.
+- **UC02:** Adding investigation notes to a forwarding rule.
+- **UC03:** Deleting a forwarding rule after investigation.
+- **UC04:** Searching for forwarding rules by criteria.
+- **UC05:** Viewing statistics about forwarding rules.
+- **UC06:** Generating comprehensive PDF reports.
+- **UC07:** Viewing detailed filter information for a forwarding rule.
+
+#### Gherkin Validation
+```gherkin
+Scenario: Security analyst reviews all forwarding rules
+  Given there are multiple forwarding rules in the system
+  When the security analyst requests all forwarding rules
+  Then a list of all rules with their details is displayed
+
+Scenario: Security analyst adds investigation notes
+  Given there is a suspicious forwarding rule in the system
+  When the security analyst adds investigation notes to the rule
+  Then the notes are saved and associated with the rule
+  And the updated rule is displayed with the new notes
+
+Scenario: Security analyst searches for forwarding rules
+  Given there are forwarding rules with different email addresses
+  When the security analyst searches for rules with a specific email pattern
+  Then only rules matching the pattern are displayed
+
+Scenario: Compliance officer generates a report
+  Given there are forwarding rules in the system
+  When the compliance officer requests a PDF report
+  Then a report generation task is created
+  And a confirmation message is returned
+  And the report is generated asynchronously
+
+Scenario: System administrator deletes a rule
+  Given there is a malicious forwarding rule that has been investigated
+  When the administrator deletes the rule
+  Then the rule is removed from the system
+  And it no longer appears in search results
+```
+
+### Specifications
+
+#### Concept
+The Email Forwarding Rules Audit System functions as a security monitoring and investigation tool focused on email forwarding configurations. It provides a comprehensive view of forwarding rules across the organization, enabling security teams to identify and remediate potential data exfiltration risks.
+
+#### UX Notes
+- The API provides intuitive endpoints for all operations.
+- The web interface displays forwarding rules in a clear, organized manner.
+- Filtering and search capabilities allow for efficient investigation.
+- Reports are generated asynchronously to maintain UI responsiveness.
+
+#### Interfaces (Controls)
+- **RESTful API**: Provides programmatic access to all system features.
+- **Web Interface**: Offers a user-friendly dashboard for security analysts.
+- **Report Generation**: Creates PDF documents with various levels of detail.
+- **Search Interface**: Enables filtering rules by various criteria.
+- **Statistics Dashboard**: Provides high-level metrics about forwarding rules.
+
+#### Behaviors
+- **Rule Management**: View, update notes, and delete forwarding rules.
+- **Search**: Find rules based on email, filter presence, or other criteria.
+- **Reporting**: Generate detailed PDF reports asynchronously.
+- **Statistics**: Provide aggregate metrics about forwarding rules.
+- **Filter Analysis**: Inspect detailed criteria and actions for forwarding filters.
+
+### Entity-Relationship Diagram
+The application's data model consists of two main entities with a one-to-one relationship:
+
+![Email Forwarding Rule Review ERD](EmailForwardingRuleReviewERD.png)
+
 ## Overview
 
 This application has been enhanced with Celery and Redis to provide asynchronous task processing capabilities for generating PDF reports. It builds upon the Django and Django Ninja implementation from Assignment 4, adding the ability to generate comprehensive PDF reports of email forwarding rules. 
