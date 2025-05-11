@@ -152,10 +152,6 @@ The Email Forwarding Rules Audit System functions as a security monitoring and i
 - **Statistics**: Provide aggregate metrics about forwarding rules.
 - **Filter Analysis**: Inspect detailed criteria and actions for forwarding filters.
 
-### Entity-Relationship Diagram
-The application's data model consists of two main entities with a one-to-one relationship:
-
-![Email Forwarding Rule Review ERD](EmailForwardingRuleReviewERD.png)
 
 ## Overview
 
