@@ -152,111 +152,11 @@ The Email Forwarding Rules Audit System functions as a security monitoring and i
 - **Statistics**: Provide aggregate metrics about forwarding rules.
 - **Filter Analysis**: Inspect detailed criteria and actions for forwarding filters.
 
+## API Reference and Documentation
 
-## Overview
+### API Endpoints
 
-This application has been enhanced with Celery and Redis to provide asynchronous task processing capabilities for generating PDF reports. It builds upon the Django and Django Ninja implementation from Assignment 4, adding the ability to generate comprehensive PDF reports of email forwarding rules. 
-
-## Key Enhancements
-1. **Asynchronous Processing**: Added Celery for background task processing
-2. **Message Broker**: Integrated Redis as a message broker for Celery
-3. **PDF Generation**: Added ReportLab for creating detailed PDF reports
-4. **Report API Endpoints**: Added multiple report generation endpoints for asynchronous report creation
-5. **Unit Tests**: Added comprehensive unit tests in the `tests.py` file
-6. **BDD and DDD**: Added a glossary for Domain-Driven Design in the `domain_glossary.md` file and Gherkin notation for tests in the `tests_description.md` file
-7. **Containerization**: Complete Docker setup for reliable and consistent deployment
-
-### Asynchronous Processing with Celery
-
-The application uses Celery to handle time-consuming tasks asynchronously, such as:
-- Generating PDF reports of all forwarding rules
-- Background processing that doesn't block API responses
-- Task scheduling and monitoring
-
-### Redis as Message Broker
-
-Redis serves as the message broker for Celery, providing:
-- Reliable message passing between Django application and Celery workers
-- Task queue management
-- Result storage and retrieval
-
-### Containerization
-
-To avoid compatibility issues, the application is fully containerized with Docker. This includes:
-- Django (web container)
-- Redis (redis container)
-- Celery (celery container)
-
-A `docker-compose.yml` file is provided for easy container orchestration.
-
-## Domain-Driven Design
-
-This project follows Domain-Driven Design (DDD) principles to ensure a shared understanding between technical and business stakeholders. A comprehensive domain glossary has been created to establish a ubiquitous language.
-
-### Domain Glossary
-
-The `domain_glossary.md` file contains the official terminology used throughout the application. This glossary:
-
-- Defines all key domain concepts precisely
-- Establishes relationships between concepts
-- Provides examples to aid understanding
-- Serves as the single source of truth for domain language
-
-Refer to this glossary when discussing features, writing documentation, or implementing code to ensure consistent use of domain terminology across the entire project.
-
-## Core Functionality
-
-The main focus of this application is providing an API that allows administrators to:
-
-1. Access forwarding rule data from the database
-2. Review forwarding rules and add investigation notes, for example:
-   - **Not malicious** - When forwarding serves a necessary business purpose
-   - **Under investigation** - During the period when administrators are investigating the rule
-   - **Delete entries** - When a user has confirmed the forwarding rule has been removed
-3. **Generate comprehensive PDF reports** of all forwarding rules for documentation and compliance purposes
-
-### Django Repository
-
-The application uses Django's ORM to interact with the database, with repositories acting as an abstraction layer between the API and the database models.
-
-### Filter Implementation Notes
-- Each AutoForwarding rule can have exactly one ForwardingFilter (one-to-one relationship)
-- Different forwarding filter for the same user can be reflected in a different AutoForwarding rule
-- The previous implementation that allowed multiple filter email addresses has been replaced with more flexible JSON-based criteria and action fields to realistically reflect Gmail forwarding filters
-
-## Data Model
-
-The data model consists of two main entities:
-
-**AutoForwarding**: Stores information about email forwarding rules for users
-- Properties include: id, email, name, forwarding_email, disposition, has_forwarding_filters, error, investigation_note
-
-**ForwardingFilter**: Stores advanced filter configuration for an email forwarding rule
-- Properties include: 
-  - **id**: Filter identifier
-  - **criteria**: JSON object with filter conditions (e.g., `{"from": "example@example.com", "subject": "invoice"}`)
-  - **action**: JSON object with actions to take (e.g., `{"forward": "backup@example.com", "addLabels": "TRASH"}`)
-  - **created_at**: When the filter was created
-- Relationship: **One-to-one** with AutoForwarding rule - each rule can have at most one filter configuration
-
-## Filter Configuration
-
-### Criteria Examples
-- `{"from": "newsletter@company.com"}` - Match emails from a specific sender
-- `{"subject": "invoice"}` - Match emails with specific text in the subject
-- `{"from": "partner@example.com", "subject": "urgent"}` - Match emails from a sender with specific subject
-- `{"to": "team@company.com"}` - Match emails sent to a specific recipient
-- `{"hasAttachment": true}` - Match emails with attachments
-- `{"size": ">5M"}` - Match emails larger than 5MB
-
-### Action Examples
-- `{"forward": "archive@example.com"}` - Forward matching emails to an archive address
-- `{"forward": "security@example.com", "addLabels": "SPAM"}` - Multiple actions for matching emails
-- `{"forward": "manager@company.com", "addLabels": ["URGENT", "NEEDS_REVIEW"]}` - Forward and add multiple labels
-
-## API Endpoints
-
-### Core Endpoints
+#### Core Endpoints
 - GET /api/rules/ - Get all forwarding rules
 - GET /api/rules/{rule_id} - Get a specific rule
 - PUT /api/rules/{rule_id}/investigation - Update investigation notes
@@ -265,16 +165,16 @@ The data model consists of two main entities:
 - GET /api/stats/ - Get statistics about forwarding rules
 - GET /api/rules/{rule_id}/filter - Get the filter for a specific rule
 
-### Report Generation Endpoints
+#### Report Generation Endpoints
 - POST /api/reports/generate - Generate a comprehensive PDF report of all forwarding rules (async)
 - POST /api/reports/stats - Generate a statistics-only PDF report (async)
 - POST /api/reports/rules-only - Generate a rules-only PDF report without filter details (async)
 
-### Filter-Specific Endpoints
+#### Filter-Specific Endpoints
 
 The filter endpoints reflect the one-to-one relationship between rules and filters:
 
-#### GET /api/rules/{rule_id}/filter
+##### GET /api/rules/{rule_id}/filter
 Returns the filter configuration for a specific rule, including both criteria and action JSON objects.
 
 Example response:
@@ -293,11 +193,11 @@ Example response:
 }
 ```
 
-## PDF Report Generation
+### PDF Report Generation
 
 The API provides PDF report generation capabilities through asynchronous Celery tasks:
 
-### Report Types
+#### Report Types
 
 1. **Complete Report** - `POST /api/reports/generate`
    - Comprehensive report with statistics and detailed information about all forwarding rules including their filter configurations
@@ -328,29 +228,146 @@ For reference, sample reports of each type have been included in the `sample_rep
 
 These sample reports demonstrate the format and content of each report type, making it easier to understand the differences between them without having to generate them yourself. They were generated using the Celery tasks and can be used as examples for customizing or extending the reporting functionality.
 
+### Sample PowerShell Commands for API Operations
+
+Below are PowerShell commands to interact with each endpoint:
+
+#### Get All Forwarding Rules
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/rules/" -Method Get
+```
+
+#### Get a Specific Rule by ID
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/rules/1" -Method Get
+```
+
+#### Update Investigation Note for a Rule
+```powershell
+$updateData = @{
+    investigation_note = "Suspicious forwarding to external domain - needs further review"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8000/api/rules/1/investigation" -Method Put -Body $updateData -ContentType "application/json"
+```
+
+#### Delete a Rule
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/rules/4" -Method Delete
+```
+
+#### Search for Rules by Email
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/rules/search/?email=example.com" -Method Get
+```
+
+#### Search for Rules with Filters
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/rules/search/?has_filters=true" -Method Get
+```
+
+#### Get Statistics About Forwarding Rules
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/stats/" -Method Get
+```
+
+#### Get Filter for a Specific Rule
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/rules/1/filter" -Method Get
+```
+
+#### Generate a PDF Report
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/reports/generate" -Method Post
+```
+
+#### Generate a PDF Report with Custom Name
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/reports/generate?report_name=quarterly_audit_report.pdf" -Method Post
+```
+
+#### Generate a Statistics-Only PDF Report
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/reports/stats" -Method Post
+```
+
+#### Generate a Rules-Only PDF Report
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/reports/rules-only" -Method Post
+```
+
+#### Tips for Better Output
+For better readability, format the JSON output:
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/rules/1" -Method Get | ConvertTo-Json -Depth 5
+```
+
+### API Documentation Access
+
+Once the application is running, you can access:
+- Interactive API documentation: http://127.0.0.1:8000/api/docs
+- Django Admin interface: http://127.0.0.1:8000/admin/
+
+
+## Overview
+
+This application has been enhanced with Celery and Redis to provide asynchronous task processing capabilities for generating PDF reports. It builds upon the Django and Django Ninja implementation from Assignment 4, adding the ability to generate comprehensive PDF reports of email forwarding rules. 
+
+## Key Enhancements
+1. **Asynchronous Processing**: Added Celery for background task processing
+2. **Message Broker**: Integrated Redis as a message broker for Celery
+3. **PDF Generation**: Added ReportLab for creating detailed PDF reports
+4. **Report API Endpoints**: Added multiple report generation endpoints for asynchronous report creation
+5. **Unit Tests**: Added comprehensive unit tests in the `tests.py` file
+6. **BDD and DDD**: Added a glossary for Domain-Driven Design in the `domain_glossary.md` file and Gherkin notation for tests in the `tests_description.md` file
+7. **Containerization**: Complete Docker setup for reliable and consistent deployment
+
 ## Testing
 
 Unit tests have been implemented to verify the functionality of all API endpoints. The tests use Django's testing framework and unittest.mock to isolate the components being tested.
 
-### Testing Documentation
+## Development and Design Documentation
+
+### Domain-Driven Design (DDD)
+
+This project follows Domain-Driven Design (DDD) principles to ensure a shared understanding between technical and business stakeholders. A comprehensive domain glossary has been created to establish a ubiquitous language.
+
+#### Domain Glossary
+
+The `domain_glossary.md` file contains the official terminology used throughout the application. This glossary:
+
+- Defines all key domain concepts precisely
+- Establishes relationships between concepts
+- Provides examples to aid understanding
+- Serves as the single source of truth for domain language
+
+Refer to this glossary when discussing features, writing documentation, or implementing code to ensure consistent use of domain terminology across the entire project.
+
+### Testing Approach
+
+#### Gherkin Notation
+
+The test documentation uses Gherkin notation (Given-When-Then format) to communicate test scenarios in a human-readable way that bridges the gap between technical and non-technical stakeholders.
+
+Example of a test written in Gherkin:
+```gherkin
+Feature: Update rule investigation note
+  Scenario: Update note for existing rule
+    Given there is a forwarding rule with ID 1 in the system
+    When I send a PUT request to "/api/rules/1/investigation" with an updated note
+    Then the response status code should be 200
+    And the rule should be updated with the new investigation note
+```
+
+#### Unit Tests Documentation
 
 The test documentation in `tests_description.md` includes:
 - Detailed descriptions of each test
-- **Gherkin notation** for BDD-style test scenarios
+- Gherkin notation for BDD-style test scenarios
 - Clear specification of expected behaviors and edge cases
 - Information about the testing approach
 
-Gherkin notation (Given-When-Then format) helps communicate the test scenarios in a human-readable way that bridges the gap between technical and non-technical stakeholders.
-
-### Running Tests
-
-To run the tests in your Docker environment:
-
-```bash
-docker-compose exec web python manage.py test forwarding_rules
-```
-
-### Test Coverage
+#### Test Coverage
 
 The tests cover:
 - All API endpoints (CRUD operations for rules and filters)
@@ -359,6 +376,14 @@ The tests cover:
 - Parameter validation
 
 See `tests_description.md` for detailed information about each test.
+
+#### Running Tests
+
+To run the tests in your Docker environment:
+
+```bash
+docker-compose exec web python manage.py test forwarding_rules
+```
 
 ## Additional Django Admin Features
 
@@ -663,3 +688,76 @@ If Celery workers are not processing tasks:
   1. Created a proper .env file (you can use .env.template as a starting point)
   2. Generated and added a SECRET_KEY to your .env file
   3. Confirmed that python-dotenv is installed
+
+## Data Model
+
+The data model consists of two main entities:
+
+**AutoForwarding**: Stores information about email forwarding rules for users
+- Properties include: id, email, name, forwarding_email, disposition, has_forwarding_filters, error, investigation_note
+
+**ForwardingFilter**: Stores advanced filter configuration for an email forwarding rule
+- Properties include: 
+  - **id**: Filter identifier
+  - **criteria**: JSON object with filter conditions (e.g., `{"from": "example@example.com", "subject": "invoice"}`)
+  - **action**: JSON object with actions to take (e.g., `{"forward": "backup@example.com", "addLabels": "TRASH"}`)
+  - **created_at**: When the filter was created
+- Relationship: **One-to-one** with AutoForwarding rule - each rule can have at most one filter configuration
+
+## Filter Configuration
+
+### Criteria Examples
+- `{"from": "newsletter@company.com"}` - Match emails from a specific sender
+- `{"subject": "invoice"}` - Match emails with specific text in the subject
+- `{"from": "partner@example.com", "subject": "urgent"}` - Match emails from a sender with specific subject
+- `{"to": "team@company.com"}` - Match emails sent to a specific recipient
+- `{"hasAttachment": true}` - Match emails with attachments
+- `{"size": ">5M"}` - Match emails larger than 5MB
+
+### Action Examples
+- `{"forward": "archive@example.com"}` - Forward matching emails to an archive address
+- `{"forward": "security@example.com", "addLabels": "SPAM"}` - Multiple actions for matching emails
+- `{"forward": "manager@company.com", "addLabels": ["URGENT", "NEEDS_REVIEW"]}` - Forward and add multiple labels
+
+## Asynchronous Processing with Celery
+
+The application uses Celery to handle time-consuming tasks asynchronously, such as:
+- Generating PDF reports of all forwarding rules
+- Background processing that doesn't block API responses
+- Task scheduling and monitoring
+
+### Redis as Message Broker
+
+Redis serves as the message broker for Celery, providing:
+- Reliable message passing between Django application and Celery workers
+- Task queue management
+- Result storage and retrieval
+
+### Containerization
+
+To avoid compatibility issues, the application is fully containerized with Docker. This includes:
+- Django (web container)
+- Redis (redis container)
+- Celery (celery container)
+
+A `docker-compose.yml` file is provided for easy container orchestration.
+
+## Core Functionality
+
+The main focus of this application is providing an API that allows administrators to:
+
+1. Access forwarding rule data from the database
+2. Review forwarding rules and add investigation notes, for example:
+   - **Not malicious** - When forwarding serves a necessary business purpose
+   - **Under investigation** - During the period when administrators are investigating the rule
+   - **Delete entries** - When a user has confirmed the forwarding rule has been removed
+3. **Generate comprehensive PDF reports** of all forwarding rules for documentation and compliance purposes
+
+### Django Repository
+
+The application uses Django's ORM to interact with the database, with repositories acting as an abstraction layer between the API and the database models.
+
+### Filter Implementation Notes
+- Each AutoForwarding rule can have exactly one ForwardingFilter (one-to-one relationship)
+- Different forwarding filter for the same user can be reflected in a different AutoForwarding rule
+- The previous implementation that allowed multiple filter email addresses has been replaced with more flexible JSON-based criteria and action fields to realistically reflect Gmail forwarding filters
