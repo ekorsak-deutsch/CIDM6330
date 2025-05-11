@@ -1,0 +1,18 @@
+# Core Django packages
+django==4.2.10
+django-ninja==1.0.1
+
+# API and data validation
+pydantic==2.5.2
+python-multipart==0.0.6
+typing-extensions==4.8.0
+
+# Celery and Redis for task processing
+celery==5.3.6
+redis==5.0.1
+
+# PDF report generation
+reportlab==4.0.8
+
+# Environment variable management
+python-dotenv==1.0.0

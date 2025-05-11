@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy requirements first for better layer caching
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the application code
+COPY . .
+
+# Create reports directory
+RUN mkdir -p reports
+
+# Command to run Celery worker
+CMD ["python", "-m", "celery", "-A", "forwarding_audit", "worker", "--loglevel=info"] 
